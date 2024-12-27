@@ -128,10 +128,24 @@ To get a local copy up and running follow these simple example steps.
     pip install -r requirements.txt
     ```
 
-4. Build the Electron app:
-    ```sh
-    cd frontend
-    npm start
+4. Create docker-compose.yml:
+    ```Docker
+    version: "3.9"
+    services:
+      azure-form-recognizer-read:
+        container_name: azure-form-recognizer-read
+        image: mcr.microsoft.com/azure-cognitive-services/form-recognizer/read-3.1
+        environment:
+          - EULA=accept
+          - billing=<endpoint> #http://localhost:<PORT Number>
+          - apiKey=<apikey>
+        ports:
+          - "5000:5000"
+        networks:
+          - ocrvnet
+    networks:
+      ocrvnet:
+        driver: bridge
     ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

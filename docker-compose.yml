@@ -1,0 +1,35 @@
+version: "3.9"  
+services:  
+  azure-form-recognizer-read:  
+    container_name: azure-form-recognizer-read  
+    image: mcr.microsoft.com/azure-cognitive-services/form-recognizer/read-3.1  
+    environment:  
+      - EULA=accept  
+      - billing=<your-form-recognizer-endpoint> 
+      - apiKey=<your-form-recognizer-key>  
+    ports:  
+      - "5000:5000"  
+    networks:  
+      - ocrvnet  
+  
+  fastapi-server:  
+    container_name: fastapi-server  
+    build: ./backend  
+    environment:  
+      - API_KEY=<your-form-recognizer-key>  
+    ports:  
+      - "8000:8000"  
+    networks:  
+      - ocrvnet  
+  
+  streamlit:  
+    container_name: streamlit  
+    build: ./frontend  
+    ports:  
+      - "8501:8501"  
+    networks:  
+      - ocrvnet  
+  
+networks:  
+  ocrvnet:  
+    driver: bridge  

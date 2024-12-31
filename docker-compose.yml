@@ -6,7 +6,7 @@ services:
     environment:  
       - EULA=accept  
       - billing=<your-form-recognizer-endpoint> 
-      - apiKey=<your-form-recognizer-key>  
+      - apiKey=<your-form-recognizer-api-key> 
     ports:  
       - "5000:5000"  
     networks:  
@@ -16,7 +16,7 @@ services:
     container_name: fastapi-server  
     build: ./backend  
     environment:  
-      - API_KEY=<your-form-recognizer-key>  
+      - API_KEY=<your-form-recognizer-api-key>
     ports:  
       - "8000:8000"  
     networks:  

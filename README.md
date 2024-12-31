@@ -153,19 +153,18 @@ To get a local copy up and running follow these simple example steps.
 
 
 <!-- USAGE EXAMPLES -->
-## Usage
+## Debugging
 
 1. Start the FastAPI backend:
     ```sh
     cd backend
-    docker build -t ml-container .
-    uvicorn main:app --reload
+    uvicorn main:app --port 8000 
     ```
 
-2. Start the Electron app:
+2. Start the Streamlit app:
     ```sh
     cd frontend
-    npm start
+    streamlit run app.py --server.port=8501 
     ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

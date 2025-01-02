@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: FastAPI",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "backend.main:app",
+                "--port", 
+                "8000"
+            ],
+            "jinja": true,
+            "env": {
+                "AZURE_DOCUMENT_ANALYSIS_ENDPOINT": "",
+                "AZURE_DOCUMENT_ANALYSIS_KEY": ""
+            }
+        }
+    ]
+}

@@ -8,12 +8,7 @@ from typing import List, Tuple, Any
 import ollama
 
 def get_available_models_comprehension() -> List[str]:
-    """
-    Retrieves the list of names of available models with Ollama (list comprehension version).
-
-    Returns:
-        List[str]: A list containing the names of available models, or an empty list in case of error or if no models are found.
-    """
+    """Retrieves the list of names of available models with Ollama (list comprehension version)."""
     try:
         items: List[Tuple[str, Any]] = ollama.list()
         model_names: List[str] = [
@@ -27,7 +22,6 @@ def get_available_models_comprehension() -> List[str]:
         print(f"Error retrieving models: {e}")
         return []
 
-# --- Caching Enhancements ---
 @st.cache_data
 def extract_text(uploaded_file_name, uploaded_file_type, uploaded_file_bytes):
     """Extracts text from PDF, DOCX, or TXT files."""
@@ -39,30 +33,24 @@ def extract_text(uploaded_file_name, uploaded_file_type, uploaded_file_bytes):
                 for page in pdf_reader.pages:
                     text += page.extract_text()
                 return text
-
         elif uploaded_file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
             doc = docx.Document(io.BytesIO(uploaded_file_bytes))
             text = ""
             for para in doc.paragraphs:
                 text += para.text + "\n"
             return text
-
         elif uploaded_file_type == "text/plain":
             text = uploaded_file_bytes.decode('utf-8')
             return text
-
         else:
             st.error("Unsupported file type.")
             return None
-
     except Exception as e:
         st.error(f"An error occurred: {e}")
         return None
 
 def stream_summary_from_ollama(text, text_area_placeholder, model_name):
-    """
-    Generates a summary of the provided text and updates a text_area directly.
-    """
+    """Generates a summary of the provided text and updates a text_area directly."""
     try:
         prompt = """Generate a summary of the text below.
         - If the text has a title, start with "Summary of [Title]:"
@@ -72,21 +60,16 @@ def stream_summary_from_ollama(text, text_area_placeholder, model_name):
 
         Text to summarize:
         """
-
         full_response = ""
         stream = chat(
             model=model_name,
             messages=[{'role': 'user', 'content': f"{prompt}\n{text}"}],
             stream=True
         )
-
-        # Add a counter for unique keys
         update_counter = 0
-
         for chunk in stream:
             if 'content' in chunk['message']:
                 full_response += chunk['message']['content']
-                # Update the text_area with a unique key each time
                 text_area_placeholder.text_area(
                     "",
                     value=full_response,
@@ -94,11 +77,11 @@ def stream_summary_from_ollama(text, text_area_placeholder, model_name):
                     key=f"summary_stream_{update_counter}"
                 )
                 update_counter += 1
-
         return full_response
     except Exception as e:
         st.error(f"Error generating summary: {e}")
         return None
+
 @st.cache_data
 def get_suggested_questions(text, model_name):
     """Generates three concise questions based on the provided text."""
@@ -114,7 +97,6 @@ def get_suggested_questions(text, model_name):
 
         Text to analyze:
         """
-
         response = chat(
             model=model_name,
             messages=[{'role': 'user', 'content': f"{prompt}\n{text}"}]
@@ -130,18 +112,15 @@ def stream_answer_from_document(question, document_text, placeholder, model_name
     try:
         full_response = ""
         messages = [{'role': 'user', 'content': f"Answer the following question based on the document: {question}\n\n{document_text}"}]
-
         stream = chat(
             model=model_name,
             messages=messages,
             stream=True
         )
-
         for chunk in stream:
             if 'content' in chunk['message']:
                 full_response += chunk['message']['content']
                 placeholder.markdown(full_response)
-
         return full_response
     except Exception as e:
         st.error(f"Error generating answer: {e}")
@@ -173,13 +152,10 @@ def handle_file_upload(uploaded_file):
         if (uploaded_file.name != st.session_state.current_file_name or
             uploaded_file.type != st.session_state.current_file_type or
             uploaded_file.getvalue() != st.session_state.current_file_bytes):
-
             st.session_state.current_file_name = uploaded_file.name
             st.session_state.current_file_type = uploaded_file.type
             st.session_state.current_file_bytes = uploaded_file.getvalue()
-
             document_text = extract_text(uploaded_file.name, uploaded_file.type, uploaded_file.getvalue())
-
             if document_text is not None:
                 st.session_state.document_text = document_text
                 st.session_state.summary = None
@@ -193,13 +169,10 @@ def display_text_and_summary(col1, col2):
     with col1:
         with st.expander("Extracted Text", expanded=True):
             st.text_area("", st.session_state.document_text, height=300, key="extracted_text")
-
     with col2:
         with st.expander("Summary", expanded=True):
             if not st.session_state.summary_generated:
-                # Create a placeholder for the text_area
                 text_area_placeholder = st.empty()
-
                 with st.spinner("Generating summary..."):
                     st.session_state.summary = stream_summary_from_ollama(
                         st.session_state.document_text,
@@ -208,15 +181,12 @@ def display_text_and_summary(col1, col2):
                     )
                     st.session_state.summary_generated = True
             else:
-                # Just display the existing summary
                 st.text_area(
                     "",
                     value=st.session_state.summary if st.session_state.summary else "",
                     height=300,
                     key="summary_display"
                 )
-
-            # Download button
             if st.session_state.summary:
                 st.download_button(
                     label="Download Summary",
@@ -235,7 +205,6 @@ def display_suggested_questions():
     if st.session_state.suggested_questions is None:
         with st.spinner("Generating suggested questions..."):
             st.session_state.suggested_questions = get_suggested_questions(st.session_state.document_text, st.session_state.selected_model)
-
     if st.session_state.suggested_questions:
         for i, question in enumerate(st.session_state.suggested_questions):
             if question and st.button(f"📝 {question}", key=f"question_button_{i}"):
@@ -243,16 +212,11 @@ def display_suggested_questions():
 
 def handle_chat_interaction():
     """Process chat interactions including suggested questions and direct input."""
-    # Display existing messages
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-
-    # Handle suggested question that needs an answer
     if st.session_state.needs_answer and st.session_state.current_question:
         question = st.session_state.current_question
-
-        # Add user message
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         st.session_state.messages.append({
             "role": "user",
@@ -261,8 +225,6 @@ def handle_chat_interaction():
         })
         with st.chat_message("user"):
             st.markdown(question)
-
-        # Generate and display answer
         with st.chat_message("assistant"):
             placeholder = st.empty()
             response = stream_answer_from_document(
@@ -277,13 +239,9 @@ def handle_chat_interaction():
                     "content": response,
                     "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
-
-        # Reset states
         st.session_state.current_question = None
         st.session_state.needs_answer = False
         st.rerun()
-
-    # Handle direct chat input
     if prompt := st.chat_input("Ask a question about the document:"):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         st.session_state.messages.append({
@@ -291,10 +249,8 @@ def handle_chat_interaction():
             "content": prompt,
             "timestamp": timestamp
         })
-
         with st.chat_message("user"):
             st.markdown(prompt)
-
         with st.chat_message("assistant"):
             placeholder = st.empty()
             response = stream_answer_from_document(
@@ -310,30 +266,57 @@ def handle_chat_interaction():
                     "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
 
+def display_app_header():
+    """Displays the centered app header with sparkles emojis."""
+    st.markdown(
+        """
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <h1 style='text-align: center; margin-bottom: 0;'>✨ Knowl<span style='color:#29A688'>EDGE</span> ✨</h1>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def app():
     """Main application function."""
     st.set_page_config(page_title="KnowlEDGE", layout="wide")
-    st.title("KnowlEDGE")
 
+    # Ajout de ce code pour supprimer toutes les marges et padding
+    st.markdown(
+        """
+        <style>
+            /* Supprime les marges et padding de tous les éléments */
+           div.stApp > div:first-child {
+                padding-top: 0px !important;
+            }
+            div.stApp > div:first-child > div:first-child {
+                padding: 0px !important;
+                margin: 0px !important;
+                max-width: 100% !important;
+            }
+            div.stApp > div:first-child > div:first-child > div:first-child {
+              max-width: 100% !important;
+            }
+            
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    display_app_header()
     initialize_session_state()
-
-    # Model selection
     if st.session_state.available_models:
         st.session_state.selected_model = st.selectbox("Select a model", st.session_state.available_models)
     else:
         st.warning("No Ollama models found. Please ensure Ollama is running and models are installed.")
-
     uploaded_file = st.file_uploader("Upload a PDF, DOCX, or TXT file", type=["pdf", "docx", "txt"])
     handle_file_upload(uploaded_file)
-
     if st.session_state.document_text and st.session_state.selected_model:
         st.subheader("Document Analysis")
         col1, col2 = st.columns(2)
         display_text_and_summary(col1, col2)
-
         st.subheader("Suggested Questions")
         display_suggested_questions()
-
         st.subheader("Chat")
         handle_chat_interaction()
     elif not st.session_state.selected_model and st.session_state.available_models:

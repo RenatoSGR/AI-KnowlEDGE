@@ -1,6 +1,14 @@
-from typing import List, Any, Tuple, Optional
+from typing import List, Any, Tuple, Optional, Generator
+from dataclasses import dataclass
 import ollama
 from ollama import chat
+
+@dataclass
+class StreamResponse:
+    content: str
+    is_error: bool = False
+    error_message: Optional[str] = None
+
 
 class OllamaService:
     def __init__(self):
@@ -13,6 +21,7 @@ class OllamaService:
         return self._available_models
 
     def _get_available_models(self) -> List[str]:
+        # This method stays the same as it doesn't need streaming
         try:
             items: List[Tuple[str, Any]] = ollama.list()
             return [
@@ -25,7 +34,11 @@ class OllamaService:
             print(f"Error retrieving models: {e}")
             return []
 
-    def generate_summary(self, text: str, model_name: str) -> str:
+    def generate_summary(self, text: str, model_name: str) -> Generator[StreamResponse, None, None]:
+        """
+        Generates a summary and yields each chunk as it arrives.
+        Returns a generator of StreamResponse objects.
+        """
         prompt = """Generate a summary of the text below.
         - If the text has a title, start with "Summary of [Title]:"
         - If no title is present, create a descriptive title and use it
@@ -35,7 +48,6 @@ class OllamaService:
         Text to summarize:
         """
         try:
-            full_response = ""
             stream = chat(
                 model=model_name,
                 messages=[{'role': 'user', 'content': f"{prompt}\n{text}"}],
@@ -43,12 +55,18 @@ class OllamaService:
             )
             for chunk in stream:
                 if 'content' in chunk['message']:
-                    full_response += chunk['message']['content']
-            return full_response
+                    yield StreamResponse(content=chunk['message']['content'])
         except Exception as e:
-            raise Exception(f"Error generating summary: {e}")
+            yield StreamResponse(
+                content="",
+                is_error=True,
+                error_message=f"Error generating summary: {str(e)}"
+            )
 
     def generate_questions(self, text: str, model_name: str) -> List[str]:
+        """
+        This method doesn't need streaming as it's a one-time response
+        """
         prompt = """Based on the following text, generate exactly three concise questions.
         Format each question on a new line, WITHOUT numbering or prefixes.
         Do not include any introductory text.
@@ -66,9 +84,12 @@ class OllamaService:
         except Exception as e:
             raise Exception(f"Error generating questions: {e}")
 
-    def generate_answer(self, question: str, document_text: str, model_name: str) -> str:
+    def generate_answer(self, question: str, document_text: str, model_name: str) -> Generator[StreamResponse, None, None]:
+        """
+        Generates an answer and yields each chunk as it arrives.
+        Returns a generator of StreamResponse objects.
+        """
         try:
-            full_response = ""
             messages = [{'role': 'user', 'content': f"Answer the following question based on the document: {question}\n\n{document_text}"}]
             stream = chat(
                 model=model_name,
@@ -77,7 +98,10 @@ class OllamaService:
             )
             for chunk in stream:
                 if 'content' in chunk['message']:
-                    full_response += chunk['message']['content']
-            return full_response
+                    yield StreamResponse(content=chunk['message']['content'])
         except Exception as e:
-            raise Exception(f"Error generating answer: {e}")
+            yield StreamResponse(
+                content="",
+                is_error=True,
+                error_message=f"Error generating answer: {str(e)}"
+            )

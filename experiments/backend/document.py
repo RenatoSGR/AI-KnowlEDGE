@@ -10,6 +10,7 @@ class DocumentProcessor:
         self.summary: Optional[str] = None
         self.suggested_questions: Optional[List[str]] = None
         self.messages: List[Message] = []
+        self.token_count: Optional[int] = None  
         
     def extract_text(self, file_name: str, file_type: str, file_bytes: bytes) -> Optional[str]:
         try:
@@ -38,3 +39,4 @@ class DocumentProcessor:
         self.summary = None
         self.suggested_questions = None
         self.messages = []
+        self.token_count = None  # Reset token count for new document

@@ -55,7 +55,17 @@ class KnowlEdgeApp:
     def display_text_and_summary(self, col1, col2):
         """Display the extracted text and summary."""
         with col1:
-            with st.expander("Extracted Text", expanded=True):
+            # Get token count if not already calculated
+            if st.session_state.processor.token_count is None and st.session_state.processor.document_text:
+                estimated_tokens = self.ollama_service._estimate_tokens(
+                    st.session_state.processor.document_text
+                )
+                st.session_state.processor.token_count = estimated_tokens
+
+            with st.expander("Extracted Text" + (
+                f" (Estimated tokens: {st.session_state.processor.token_count:,})" 
+                if st.session_state.processor.token_count is not None else ""
+            ), expanded=True):
                 st.text_area(
                     "", 
                     st.session_state.processor.document_text, 
@@ -102,7 +112,6 @@ class KnowlEdgeApp:
                     )
 
                 if st.session_state.processor.summary:
-                    # Add regenerate button
                     if st.button("Regenerate Summary"):
                         st.session_state.processor.summary = None
                         st.session_state.summary_in_progress = False

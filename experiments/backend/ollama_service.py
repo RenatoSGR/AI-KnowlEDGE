@@ -2,7 +2,7 @@ from typing import List, Any, Tuple, Optional, Generator
 from dataclasses import dataclass
 import ollama
 from ollama import chat
-import textwrap
+import re  # Add this import
 
 @dataclass
 class StreamResponse:
@@ -13,6 +13,30 @@ class StreamResponse:
 class OllamaService:
     def __init__(self):
         self._available_models: Optional[List[str]] = None
+        self.TOKEN_THRESHOLD = 3500  # Add this constant
+
+    def _estimate_tokens(self, text: str) -> int:
+        """
+        Rough token estimation based on common rules:
+        - ~4 characters per token for English text
+        - Split on whitespace for words
+        - Count punctuation separately
+        """
+        if not text:
+            return 0
+            
+        # Count words (splitting on whitespace)
+        words = text.split()
+        # Count punctuation marks that are likely their own tokens
+        punctuation = len(re.findall(r'[.,!?;:"]', text))
+        # Special characters and numbers often count as separate tokens
+        special_chars = len(re.findall(r'[@#$%^&*()<>{}\[\]~`_\-+=|\\]', text))
+        # Numbers often count as their own tokens
+        numbers = len(re.findall(r'\d+', text))
+        
+        # Rough estimation combining all factors
+        estimated_tokens = len(words) + punctuation + special_chars + numbers
+        return estimated_tokens
 
     @property
     def available_models(self) -> List[str]:
@@ -71,10 +95,33 @@ class OllamaService:
         Generates a summary using a custom map-reduce approach.
         """
         try:
-            # Split text into chunks
-            chunks = self._split_text(text)
+            # Check token count and decide whether to chunk
+            estimated_tokens = self._estimate_tokens(text)
             
-            # Map phase: Summarize each chunk
+            if estimated_tokens <= self.TOKEN_THRESHOLD:
+                # If text is small enough, summarize directly
+                prompt = """Summarize the following text. Focus on key information and main points:
+
+                {text}
+
+                Summary:"""
+                
+                stream = ollama.chat(
+                    model=model_name,
+                    messages=[{
+                        'role': 'user',
+                        'content': prompt.format(text=text)
+                    }],
+                    stream=True
+                )
+                
+                for chunk in stream:
+                    if 'content' in chunk['message']:
+                        yield StreamResponse(content=chunk['message']['content'])
+                return
+
+            # For longer texts, use map-reduce approach
+            chunks = self._split_text(text)
             chunk_summaries = []
             map_prompt = """Summarize the following text extract. Focus on key information and main points:
 

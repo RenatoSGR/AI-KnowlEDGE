@@ -16,7 +16,7 @@ class KnowlEdgeApp:
             'current_question': None,
             'uploaded_file_name': None,
             'summary_in_progress': False,
-            'update_counter': 0  # For unique streaming keys
+            'update_counter': 0
         }
         
         for key, initial_value in initial_states.items():
@@ -102,6 +102,12 @@ class KnowlEdgeApp:
                     )
 
                 if st.session_state.processor.summary:
+                    # Add regenerate button
+                    if st.button("Regenerate Summary"):
+                        st.session_state.processor.summary = None
+                        st.session_state.summary_in_progress = False
+                        st.rerun()
+
                     st.download_button(
                         label="Download Summary",
                         data=st.session_state.processor.summary,

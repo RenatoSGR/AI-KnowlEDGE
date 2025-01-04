@@ -8,8 +8,6 @@ class StreamResponse:
     content: str
     is_error: bool = False
     error_message: Optional[str] = None
-
-
 class OllamaService:
     def __init__(self):
         self._available_models: Optional[List[str]] = None

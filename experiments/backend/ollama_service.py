@@ -2,7 +2,7 @@ from typing import List, Any, Tuple, Optional, Generator
 from dataclasses import dataclass
 import ollama
 from ollama import chat
-import re  # Add this import
+import re
 
 @dataclass
 class StreamResponse:
@@ -13,7 +13,7 @@ class StreamResponse:
 class OllamaService:
     def __init__(self):
         self._available_models: Optional[List[str]] = None
-        self.TOKEN_THRESHOLD = 3500  # Add this constant
+        self.TOKEN_THRESHOLD = 2500  # Updated token threshold
 
     def _estimate_tokens(self, text: str) -> int:
         """
@@ -59,16 +59,13 @@ class OllamaService:
 
     def _split_text(self, text: str, chunk_size: int = 2000) -> List[str]:
         """Split text into chunks of approximately equal size."""
-        # First split by double newlines to preserve paragraph structure
         paragraphs = text.split('\n\n')
         chunks = []
         current_chunk = []
         current_size = 0
         
         for paragraph in paragraphs:
-            # If a single paragraph is too long, split it further
             if len(paragraph) > chunk_size:
-                # Split into sentences (roughly)
                 sentences = paragraph.replace('. ', '.\n').split('\n')
                 for sentence in sentences:
                     if current_size + len(sentence) > chunk_size and current_chunk:
@@ -168,24 +165,56 @@ class OllamaService:
                 error_message=f"Error generating summary: {str(e)}"
             )
 
-    def generate_questions(self, text: str, model_name: str) -> List[str]:
+    def generate_questions(self, text: str, model_name: str, summary: str) -> List[str]:
+        """
+        Generates questions based on the document summary.
+        The generated questions will be answered using the full document text.
+        """
         try:
-            messages = [{'role': 'user', 'content': f"""Based on the following text, generate exactly three concise questions.
-            Format each question on a new line, WITHOUT numbering or prefixes.
-            Do not include any introductory text.
-            Make each question standalone and thought-provoking.
+            few_shot_prompt = """Given a summary, generate exactly three insightful questions.  generated questions will be answered using the full document textThe. Follow these examples precisely:
 
-            Text to analyze: {text}"""}]
+Example 1:
+Summary: The report analyzes the global coffee industry in 2023, highlighting a 15% increase in sustainable farming practices, significant price fluctuations due to weather events in Brazil, and emerging trends in specialty coffee consumption across Asia.
+
+How did extreme weather conditions in Brazil impact global coffee prices and supply chains?
+What specific sustainable farming practices saw the highest adoption rates among coffee producers?
+Which Asian markets showed the most significant growth in specialty coffee consumption and why?
+
+Example 2:
+Summary: The study examines remote work productivity during 2020-2023, finding that 65% of companies maintained or increased productivity, while noting challenges in collaboration and mental health. New hybrid work models emerged as a preferred solution across various industries.
+
+What specific factors contributed to maintaining or increasing productivity in remote work settings?
+How did companies successfully address collaboration challenges in the remote work environment?
+What were the key characteristics of the most effective hybrid work models implemented?
+
+Now, generate three questions for this summary:
+
+{summary}"""
+            
+            messages = [{'role': 'user', 'content': few_shot_prompt.format(summary=summary)}]
             
             response = chat(model=model_name, messages=messages)
-            questions = [q.strip() for q in response['message']['content'].splitlines() if q.strip()]
-            return (questions + [''] * 3)[:3]
+            # Skip any lines that aren't questions (like "Questions:" headers)
+            questions = [
+                line.strip() for line in response['message']['content'].splitlines()
+                if line.strip() and line.strip().endswith('?')
+            ]
+            return (questions + [''] * 3)[:3]  # Ensure exactly 3 questions
+            
         except Exception as e:
             raise Exception(f"Error generating questions: {e}")
 
     def generate_answer(self, question: str, document_text: str, model_name: str) -> Generator[StreamResponse, None, None]:
+        """
+        Generates a detailed answer using the complete document text.
+        """
         try:
-            messages = [{'role': 'user', 'content': f"Answer the following question based on the document: {question}\n\n{document_text}"}]
+            messages = [{'role': 'user', 'content': f"""Answer the following question with all relevant details from the document:
+
+            Question: {question}
+
+            Document text: {document_text}"""}]
+            
             stream = chat(model=model_name, messages=messages, stream=True)
             
             for chunk in stream:

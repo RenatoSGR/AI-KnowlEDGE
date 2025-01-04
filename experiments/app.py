@@ -28,7 +28,7 @@ class KnowlEdgeApp:
         st.markdown(
             """
             <div style="display: flex; justify-content: center; align-items: center;">
-                <h1 style='text-align: center; margin-bottom: 0;'>✨ Knowl<span style='color:#29A688'>EDGE</span> ✨</h1>
+                <h1 style='text-align: center; margin-bottom: 0;'>✨ <span style='color:#3B82F6'>AI</span> knowl<span style='color:#29A688'>EDGE</span> ✨</h1>
             </div>
             """,
             unsafe_allow_html=True,
@@ -131,7 +131,8 @@ class KnowlEdgeApp:
                 try:
                     questions = self.ollama_service.generate_questions(
                         st.session_state.processor.document_text,
-                        st.session_state.selected_model
+                        st.session_state.selected_model,
+                        summary=st.session_state.processor.summary
                     )
                     st.session_state.processor.suggested_questions = questions
                 except Exception as e:
@@ -195,7 +196,7 @@ class KnowlEdgeApp:
 
     def run(self):
         """Main application function."""
-        st.set_page_config(page_title="KnowlEDGE", layout="wide")
+        st.set_page_config(page_title="AI KnowlEDGE", layout="wide")
 
         # Remove margins and padding
         st.markdown(

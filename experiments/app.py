@@ -27,7 +27,10 @@ class KnowlEdgeApp:
             'current_question': None,
             'uploaded_file_name': None,
             'summary_in_progress': False,
-            'update_counter': 0
+            'questions_generated': False,
+            'update_counter': 0,
+            'display_chunks': False,
+            'extracting_text': False  # Flag for text extraction status
         }
         
         for key, initial_value in initial_states.items():
@@ -67,12 +70,15 @@ class KnowlEdgeApp:
                 f" (Estimated tokens: {st.session_state.processor.token_count:,})" 
                 if st.session_state.processor.token_count is not None else ""
             ), expanded=True):
-                st.text_area(
-                    "", 
-                    st.session_state.processor.document_text, 
-                    height=300,
-                    key="extracted_text"
-                )
+                if st.session_state.extracting_text:
+                    st.info("Extracting text from document...")
+                else:
+                    st.text_area(
+                        "", 
+                        st.session_state.processor.document_text, 
+                        height=300,
+                        key="extracted_text"
+                    )
 
         with col2:
             with st.expander("Summary", expanded=True):
@@ -130,26 +136,38 @@ class KnowlEdgeApp:
     def display_suggested_questions(self):
         """
         Generate and display suggested questions about the document.
-        Only generates questions if they haven't been generated yet and
-        displays them as clickable buttons.
         """
-        if not st.session_state.processor.suggested_questions:
-            with st.spinner("Generating suggested questions..."):
-                try:
-                    questions = self.ollama_service.generate_questions(
-                        st.session_state.processor.document_text,
-                        st.session_state.selected_model,
-                        summary=st.session_state.processor.summary
-                    )
-                    st.session_state.processor.suggested_questions = questions
-                except Exception as e:
-                    st.error(f"Error generating questions: {e}")
-                    return
+        if not st.session_state.questions_generated:
+            # Start generating questions if not already started
+            if not st.session_state.processor.suggested_questions:
+                with st.spinner("Generating suggested questions..."):
+                    try:
+                        questions = self.ollama_service.generate_questions(
+                            st.session_state.processor.document_text,
+                            st.session_state.selected_model,
+                            summary=st.session_state.processor.summary
+                        )
+                        st.session_state.processor.suggested_questions = questions
+                        st.session_state.questions_generated = True  # Mark as generated
+                    except Exception as e:
+                        st.error(f"Error generating questions: {e}")
+                        return
 
-        for i, question in enumerate(st.session_state.processor.suggested_questions):
-            if question and st.button(f"📝 {question}", key=f"question_button_{i}"):
-                st.session_state.current_question = question
-                st.session_state.needs_answer = True
+        # Display logic
+        if st.session_state.questions_generated:
+            # If questions have been generated, display them
+            if st.session_state.processor.suggested_questions:
+                for i, question in enumerate(st.session_state.processor.suggested_questions):
+                    if question and st.button(f"📝 {question}", key=f"question_button_{i}"):
+                        st.session_state.current_question = question
+                        st.session_state.needs_answer = True
+                        st.session_state.display_chunks = True
+                        st.rerun()
+            else:
+                st.info("No suggested questions available.")
+        else:
+            # If questions are still being generated, show a message
+            st.info("Suggested questions are being generated...")
 
     def _handle_question(self, question: str):
         """
@@ -169,41 +187,46 @@ class KnowlEdgeApp:
         with st.chat_message("assistant"):
             placeholder = st.empty()
             full_response = ""
-            
-            try:
-                # Retrieve relevant context chunks using RAG
-                relevant_chunks = st.session_state.processor.get_relevant_chunks(
-                    question,
-                    k=3  # Get top 3 most relevant chunks
-                )
-                
-                # Generate answer using the retrieved context
-                for response in self.ollama_service.generate_answer(
-                    question,
-                    relevant_chunks,
-                    st.session_state.selected_model
-                ):
-                    if response.is_error:
-                        st.error(response.error_message)
-                        break
-                    
-                    full_response += response.content
-                    placeholder.markdown(full_response)
-                
-                if not response.is_error:
-                    st.session_state.processor.messages.append(
-                        Message("assistant", full_response, datetime.now())
+
+            with st.spinner("Generating answer..."):
+                try:
+                    # Retrieve relevant context chunks using RAG
+                    relevant_chunks = st.session_state.processor.get_relevant_chunks(
+                        question,
+                        k=3  # Get top 3 most relevant chunks
                     )
-                    
-                    # Show the context used to generate the answer
-                    with st.expander("View source context"):
-                        for i, chunk in enumerate(relevant_chunks, 1):
-                            st.markdown(f"**Context {i}:**")
-                            st.markdown(chunk)
-                            st.markdown("---")
-                    
-            except Exception as e:
-                st.error(f"Error generating answer: {e}")
+
+                    # Generate answer using the retrieved context
+                    for response in self.ollama_service.generate_answer(
+                        question,
+                        relevant_chunks,
+                        st.session_state.selected_model
+                    ):
+                        if response.is_error:
+                            st.error(response.error_message)
+                            break
+
+                        full_response += response.content
+                        placeholder.markdown(full_response)
+
+                    if not response.is_error:
+                        st.session_state.processor.messages.append(
+                            Message("assistant", full_response, datetime.now())
+                        )
+
+                        # Display the source context immediately after receiving it
+                        if st.session_state.display_chunks:
+                            with st.expander("View source context"):
+                                for i, chunk in enumerate(relevant_chunks, 1):
+                                    st.markdown(f"**Context {i}:**")
+                                    st.markdown(chunk)
+                                    st.markdown("---")
+
+                except Exception as e:
+                    st.error(f"Error generating answer: {e}")
+
+                finally:
+                    st.session_state.display_chunks = False  # Correct indentation
 
     def handle_chat_interaction(self):
         """
@@ -220,10 +243,10 @@ class KnowlEdgeApp:
             self._handle_question(st.session_state.current_question)
             st.session_state.current_question = None
             st.session_state.needs_answer = False
-            st.rerun()
 
         # Handle new questions
         if prompt := st.chat_input("Ask a question about the document:"):
+            st.session_state.display_chunks = True
             self._handle_question(prompt)
 
     def process_new_document(self, file_name: str, file_type: str, file_bytes: bytes):
@@ -231,17 +254,23 @@ class KnowlEdgeApp:
         Process a new document and reset relevant application state.
         Handles document processing and initializes RAG components.
         """
+        st.session_state.extracting_text = True
         try:
-            st.session_state.processor.process_new_document(file_name, file_type, file_bytes)
-            st.session_state.uploaded_file_name = file_name
-            st.success("New file uploaded and processed!")
-            
+            with st.spinner("Extracting text from document..."):
+                st.session_state.processor.process_new_document(file_name, file_type, file_bytes)
+                st.session_state.uploaded_file_name = file_name
+                st.success("New file uploaded and processed!")
+
             # Reset states for new document
             st.session_state.update_counter = 0
             st.session_state.summary_in_progress = False
-            
+            st.session_state.questions_generated = False
+            st.session_state.processor.suggested_questions = None
+
         except Exception as e:
             st.error(f"Error processing file: {e}")
+        finally:
+            st.session_state.extracting_text = False
 
     def handle_file_upload(self, uploaded_file):
         """Handle file upload and document processing."""
@@ -308,11 +337,11 @@ class KnowlEdgeApp:
             st.subheader("Document Analysis")
             col1, col2 = st.columns(2)
             self.display_text_and_summary(col1, col2)
-            
+
             if st.session_state.processor.summary and not st.session_state.summary_in_progress:
                 st.subheader("Suggested Questions")
                 self.display_suggested_questions()
-            
+
             st.subheader("Chat")
             self.handle_chat_interaction()
         elif not st.session_state.selected_model and available_models:

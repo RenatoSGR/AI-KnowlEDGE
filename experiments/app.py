@@ -9,7 +9,7 @@ class KnowlEdgeApp:
     This class coordinates the document processing, RAG-based question answering,
     and Streamlit interface components.
     """
-    
+
     def __init__(self):
         """Initialize core components of the application."""
         self.document_processor = DocumentProcessor()
@@ -30,9 +30,10 @@ class KnowlEdgeApp:
             'questions_generated': False,
             'update_counter': 0,
             'display_chunks': False,
+            'chat_history_with_context': [], # Add a list to store chat history with context
             'extracting_text': False  # Flag for text extraction status
         }
-        
+
         for key, initial_value in initial_states.items():
             if key not in st.session_state:
                 st.session_state[key] = initial_value
@@ -67,15 +68,15 @@ class KnowlEdgeApp:
                 st.session_state.processor.token_count = estimated_tokens
 
             with st.expander("Extracted Text" + (
-                f" (Estimated tokens: {st.session_state.processor.token_count:,})" 
+                f" (Estimated tokens: {st.session_state.processor.token_count:,})"
                 if st.session_state.processor.token_count is not None else ""
             ), expanded=True):
                 if st.session_state.extracting_text:
                     st.info("Extracting text from document...")
                 else:
                     st.text_area(
-                        "", 
-                        st.session_state.processor.document_text, 
+                        "",
+                        st.session_state.processor.document_text,
                         height=300,
                         key="extracted_text"
                     )
@@ -87,7 +88,7 @@ class KnowlEdgeApp:
                     with st.spinner("Generating summary..."):
                         st.session_state.summary_in_progress = True
                         full_response = ""
-                        
+
                         try:
                             for response in self.ollama_service.generate_summary(
                                 st.session_state.processor.document_text,
@@ -96,7 +97,7 @@ class KnowlEdgeApp:
                                 if response.is_error:
                                     st.error(response.error_message)
                                     break
-                                
+
                                 full_response += response.content
                                 text_area_placeholder.text_area(
                                     "",
@@ -105,7 +106,7 @@ class KnowlEdgeApp:
                                     key=f"summary_stream_{st.session_state.update_counter}"
                                 )
                                 st.session_state.update_counter += 1
-                            
+
                             if not response.is_error:
                                 st.session_state.processor.summary = full_response
                         finally:
@@ -119,27 +120,23 @@ class KnowlEdgeApp:
                     )
 
                 if st.session_state.processor.summary:
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        if st.button("Regenerate Summary"):
-                            st.session_state.processor.summary = None
-                            st.session_state.summary_in_progress = False
-                            st.rerun()
-                    with col2:
-                        st.download_button(
-                            label="Download Summary",
-                            data=st.session_state.processor.summary,
-                            file_name="summary.txt",
-                            mime="text/plain"
-                        )
+                    if st.button("Regenerate Summary"):
+                        st.session_state.processor.summary = None
+                        st.session_state.summary_in_progress = False
+                        st.rerun()
+                    st.download_button(
+                        label="Download Summary",
+                        data=st.session_state.processor.summary,
+                        file_name="summary.txt",
+                        mime="text/plain"
+                    )
 
     def display_suggested_questions(self):
         """
         Generate and display suggested questions about the document.
         """
         if not st.session_state.questions_generated:
-            # Start generating questions if not already started
-            if not st.session_state.processor.suggested_questions:
+            if not st.session_state.processor.suggested_questions and not st.session_state.summary_in_progress:
                 with st.spinner("Generating suggested questions..."):
                     try:
                         questions = self.ollama_service.generate_questions(
@@ -148,26 +145,25 @@ class KnowlEdgeApp:
                             summary=st.session_state.processor.summary
                         )
                         st.session_state.processor.suggested_questions = questions
-                        st.session_state.questions_generated = True  # Mark as generated
+                        st.session_state.questions_generated = True
                     except Exception as e:
                         st.error(f"Error generating questions: {e}")
                         return
 
         # Display logic
-        if st.session_state.questions_generated:
-            # If questions have been generated, display them
-            if st.session_state.processor.suggested_questions:
-                for i, question in enumerate(st.session_state.processor.suggested_questions):
-                    if question and st.button(f"📝 {question}", key=f"question_button_{i}"):
-                        st.session_state.current_question = question
-                        st.session_state.needs_answer = True
-                        st.session_state.display_chunks = True
-                        st.rerun()
-            else:
-                st.info("No suggested questions available.")
-        else:
-            # If questions are still being generated, show a message
-            st.info("Suggested questions are being generated...")
+        if st.session_state.questions_generated and st.session_state.processor.suggested_questions:
+            for i, question in enumerate(st.session_state.processor.suggested_questions):
+                if question and st.button(f"📝 {question}", key=f"question_button_{i}"):
+                    st.session_state.current_question = question
+                    st.session_state.needs_answer = True
+                    st.session_state.display_chunks = True
+                    st.rerun()
+        elif st.session_state.questions_generated and not st.session_state.processor.suggested_questions:
+            st.info("No suggested questions were generated.")
+        elif not st.session_state.questions_generated and not st.session_state.summary_in_progress:
+            st.info("Generating suggested questions...")
+        elif st.session_state.summary_in_progress:
+            st.info("Please wait for the summary to be generated before generating questions.")
 
     def _handle_question(self, question: str):
         """
@@ -176,10 +172,12 @@ class KnowlEdgeApp:
         1. Records the question in chat history
         2. Retrieves relevant context using the vector store
         3. Generates an answer using the retrieved context
-        4. Shows the answer and optionally displays the source context
+        4. Shows the answer and immediately displays the source context
         """
         timestamp = datetime.now()
         st.session_state.processor.messages.append(Message("user", question, timestamp))
+        # Temporarily store the user message for immediate display
+        st.session_state.chat_history_with_context.append({"role": "user", "content": question})
 
         with st.chat_message("user"):
             st.markdown(question)
@@ -187,6 +185,7 @@ class KnowlEdgeApp:
         with st.chat_message("assistant"):
             placeholder = st.empty()
             full_response = ""
+            relevant_chunks_for_display = [] # Store chunks for display
 
             with st.spinner("Generating answer..."):
                 try:
@@ -195,6 +194,7 @@ class KnowlEdgeApp:
                         question,
                         k=3  # Get top 3 most relevant chunks
                     )
+                    relevant_chunks_for_display = list(relevant_chunks) # Copy for display
 
                     # Generate answer using the retrieved context
                     for response in self.ollama_service.generate_answer(
@@ -210,33 +210,42 @@ class KnowlEdgeApp:
                         placeholder.markdown(full_response)
 
                     if not response.is_error:
-                        st.session_state.processor.messages.append(
-                            Message("assistant", full_response, datetime.now())
+                        # Store assistant message with context
+                        st.session_state.chat_history_with_context.append(
+                            {"role": "assistant", "content": full_response, "context": relevant_chunks_for_display}
                         )
 
                         # Display the source context immediately after receiving it
-                        if st.session_state.display_chunks:
+                        if relevant_chunks_for_display:
                             with st.expander("View source context"):
-                                for i, chunk in enumerate(relevant_chunks, 1):
+                                for i, chunk in enumerate(relevant_chunks_for_display, 1):
                                     st.markdown(f"**Context {i}:**")
                                     st.markdown(chunk)
                                     st.markdown("---")
 
+                        st.session_state.processor.messages.append(
+                            Message("assistant", full_response, datetime.now())
+                        )
+
                 except Exception as e:
                     st.error(f"Error generating answer: {e}")
-
-                finally:
-                    st.session_state.display_chunks = False  # Correct indentation
 
     def handle_chat_interaction(self):
         """
         Process chat interactions including suggested questions and direct input.
         Manages the chat interface, message history, and question handling.
         """
-        # Display existing messages
-        for message in st.session_state.processor.messages:
-            with st.chat_message(message.role):
-                st.markdown(message.content)
+        # Display existing messages with context
+        for item in st.session_state.chat_history_with_context:
+            with st.chat_message(item["role"]):
+                st.markdown(item["content"])
+                if item["role"] == "assistant" and "context" in item and item["context"]:
+                    if not st.session_state.current_question or item["content"] != st.session_state.chat_history_with_context[-1]["content"]:
+                        with st.expander("View source context"):
+                            for i, chunk in enumerate(item["context"], 1):
+                                st.markdown(f"**Context {i}:**")
+                                st.markdown(chunk)
+                                st.markdown("---")
 
         # Handle pending questions
         if st.session_state.needs_answer and st.session_state.current_question:
@@ -246,7 +255,6 @@ class KnowlEdgeApp:
 
         # Handle new questions
         if prompt := st.chat_input("Ask a question about the document:"):
-            st.session_state.display_chunks = True
             self._handle_question(prompt)
 
     def process_new_document(self, file_name: str, file_type: str, file_bytes: bytes):
@@ -266,6 +274,7 @@ class KnowlEdgeApp:
             st.session_state.summary_in_progress = False
             st.session_state.questions_generated = False
             st.session_state.processor.suggested_questions = None
+            st.session_state.chat_history_with_context = [] # Clear chat history
 
         except Exception as e:
             st.error(f"Error processing file: {e}")

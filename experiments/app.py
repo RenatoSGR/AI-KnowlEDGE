@@ -180,6 +180,7 @@ class KnowlEdgeApp:
             placeholder = st.empty()
             full_response = ""
             relevant_chunks_for_display = []
+            show_context = False # Flag to show context after generation
 
             with st.spinner("Generating answer..."):
                 try:
@@ -208,13 +209,7 @@ class KnowlEdgeApp:
                         st.session_state.chat_history_with_context.append(
                             {"role": "assistant", "content": full_response, "context": relevant_chunks_for_display}
                         )
-
-                        if relevant_chunks_for_display:
-                            with st.expander("View source context"):
-                                for i, chunk in enumerate(relevant_chunks_for_display, 1):
-                                    st.markdown(f"**Context {i}:**")
-                                    st.markdown(chunk)
-                                    st.markdown("---")
+                        show_context = True # Set flag to show context
 
                         st.session_state.processor.messages.append(
                             Message("assistant", full_response, datetime.now())
@@ -236,6 +231,14 @@ class KnowlEdgeApp:
                     if not response.content in full_response: # Avoid re-printing the first part
                         full_response += response.content
                         placeholder.markdown(full_response)
+
+            # Display source context if available and the flag is set
+            if show_context and relevant_chunks_for_display:
+                with st.expander("View source context"): # Removed expanded=True
+                    for i, chunk in enumerate(relevant_chunks_for_display, 1):
+                        st.markdown(f"**Context {i}:**")
+                        st.markdown(chunk)
+                        st.markdown("---")
 
     def handle_chat_interaction(self):
         """

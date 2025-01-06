@@ -168,15 +168,9 @@ class KnowlEdgeApp:
     def _handle_question(self, question: str):
         """
         Handle individual questions using RAG-enhanced answer generation.
-        This method:
-        1. Records the question in chat history
-        2. Retrieves relevant context using the vector store
-        3. Generates an answer using the retrieved context
-        4. Shows the answer and immediately displays the source context
         """
         timestamp = datetime.now()
         st.session_state.processor.messages.append(Message("user", question, timestamp))
-        # Temporarily store the user message for immediate display
         st.session_state.chat_history_with_context.append({"role": "user", "content": question})
 
         with st.chat_message("user"):
@@ -185,16 +179,17 @@ class KnowlEdgeApp:
         with st.chat_message("assistant"):
             placeholder = st.empty()
             full_response = ""
-            relevant_chunks_for_display = [] # Store chunks for display
+            relevant_chunks_for_display = []
 
+            # Use a single spinner that covers both context retrieval and answer generation
             with st.spinner("Generating answer..."):
                 try:
                     # Retrieve relevant context chunks using RAG
                     relevant_chunks = st.session_state.processor.get_relevant_chunks(
                         question,
-                        k=3  # Get top 3 most relevant chunks
+                        k=3
                     )
-                    relevant_chunks_for_display = list(relevant_chunks) # Copy for display
+                    relevant_chunks_for_display = list(relevant_chunks)
 
                     # Generate answer using the retrieved context
                     for response in self.ollama_service.generate_answer(
@@ -207,15 +202,13 @@ class KnowlEdgeApp:
                             break
 
                         full_response += response.content
-                        placeholder.markdown(full_response)
+                        placeholder.markdown(full_response)  # Update the placeholder as text is generated
 
                     if not response.is_error:
-                        # Store assistant message with context
                         st.session_state.chat_history_with_context.append(
                             {"role": "assistant", "content": full_response, "context": relevant_chunks_for_display}
                         )
 
-                        # Display the source context immediately after receiving it
                         if relevant_chunks_for_display:
                             with st.expander("View source context"):
                                 for i, chunk in enumerate(relevant_chunks_for_display, 1):

@@ -181,7 +181,6 @@ class KnowlEdgeApp:
             full_response = ""
             relevant_chunks_for_display = []
 
-            # Use a single spinner that covers both context retrieval and answer generation
             with st.spinner("Generating answer..."):
                 try:
                     # Retrieve relevant context chunks using RAG
@@ -203,6 +202,7 @@ class KnowlEdgeApp:
 
                         full_response += response.content
                         placeholder.markdown(full_response)  # Update the placeholder as text is generated
+                        break # Stop the spinner as soon as we get the first response
 
                     if not response.is_error:
                         st.session_state.chat_history_with_context.append(
@@ -222,6 +222,20 @@ class KnowlEdgeApp:
 
                 except Exception as e:
                     st.error(f"Error generating answer: {e}")
+
+            # Continue streaming the answer after the spinner is gone
+            if full_response:
+                for response in self.ollama_service.generate_answer(
+                    question,
+                    relevant_chunks,
+                    st.session_state.selected_model
+                ):
+                    if response.is_error:
+                        st.error(response.error_message)
+                        break
+                    if not response.content in full_response: # Avoid re-printing the first part
+                        full_response += response.content
+                        placeholder.markdown(full_response)
 
     def handle_chat_interaction(self):
         """

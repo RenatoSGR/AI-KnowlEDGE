@@ -1,64 +1,87 @@
-from typing import List, Any, Tuple, Optional, Generator
+from typing import List, Any, Tuple, Optional, Generator, Dict
 from dataclasses import dataclass
 import ollama
 from ollama import chat
 import re
+from .config import EXCLUDED_MODELS, TOKEN_THRESHOLD
 
 @dataclass
 class StreamResponse:
+    """
+    Represents a streaming response from the language model.
+    This class helps structure the responses and handle potential errors.
+    """
     content: str
     is_error: bool = False
     error_message: Optional[str] = None
 
 class OllamaService:
+    """
+    Manages interactions with Ollama models for text generation.
+    Handles model selection, text generation, summarization, and question answering.
+    """
+    
     def __init__(self):
+        """Initialize the Ollama service with default settings."""
         self._available_models: Optional[List[str]] = None
-        self.TOKEN_THRESHOLD = 2500  # Updated token threshold
+        self.TOKEN_THRESHOLD = TOKEN_THRESHOLD
 
     def _estimate_tokens(self, text: str) -> int:
         """
-        Rough token estimation based on common rules:
-        - ~4 characters per token for English text
-        - Split on whitespace for words
-        - Count punctuation separately
+        Provides a rough estimation of tokens in a text string.
+        This helps in deciding when to chunk text for processing.
         """
         if not text:
             return 0
             
-        # Count words (splitting on whitespace)
+        # Count various text elements that typically correspond to tokens
         words = text.split()
-        # Count punctuation marks that are likely their own tokens
         punctuation = len(re.findall(r'[.,!?;:"]', text))
-        # Special characters and numbers often count as separate tokens
         special_chars = len(re.findall(r'[@#$%^&*()<>{}\[\]~`_\-+=|\\]', text))
-        # Numbers often count as their own tokens
         numbers = len(re.findall(r'\d+', text))
         
-        # Rough estimation combining all factors
-        estimated_tokens = len(words) + punctuation + special_chars + numbers
-        return estimated_tokens
+        return len(words) + punctuation + special_chars + numbers
 
     @property
     def available_models(self) -> List[str]:
+        """
+        Retrieves and caches the list of available models for text generation.
+        Uses lazy loading to fetch models only when needed.
+        """
         if self._available_models is None:
             self._available_models = self._get_available_models()
         return self._available_models
 
     def _get_available_models(self) -> List[str]:
+        """
+        Retrieve a list of available Ollama models for text generation.
+        
+        This method efficiently filters models during the initial extraction using
+        the EXCLUDED_MODELS set from our configuration. This combines efficiency
+        (filtering during extraction) with maintainability (centralized configuration).
+        """
         try:
             items: List[Tuple[str, Any]] = ollama.list()
-            return [
+            
+            # Extract and filter models in a single pass, using our configuration
+            generation_models = [
                 model.model
                 for item in items
                 if isinstance(item, tuple) and item[0] == 'models'
                 for model in item[1]
+                if model.model not in EXCLUDED_MODELS
             ]
+            
+            return generation_models
         except Exception as e:
             print(f"Error retrieving models: {e}")
             return []
 
     def _split_text(self, text: str, chunk_size: int = 2000) -> List[str]:
-        """Split text into chunks of approximately equal size."""
+        """
+        Splits text into smaller chunks while trying to maintain context.
+        Uses paragraph and sentence boundaries for natural splits.
+        """
         paragraphs = text.split('\n\n')
         chunks = []
         current_chunk = []
@@ -89,28 +112,25 @@ class OllamaService:
 
     def generate_summary(self, text: str, model_name: str) -> Generator[StreamResponse, None, None]:
         """
-        Generates a summary using a custom map-reduce approach.
+        Generates a document summary using a map-reduce approach for longer texts.
+        For shorter texts, generates summary directly.
         """
         try:
-            # Check token count and decide whether to chunk
             estimated_tokens = self._estimate_tokens(text)
             
+            # Use direct summarization for shorter texts
             if estimated_tokens <= self.TOKEN_THRESHOLD:
-                # If text is small enough, summarize directly
-                prompt = """Summarize the following text. Focus on key information and main points:
+                messages = [{
+                    'role': 'user',
+                    'content': f"""Create a comprehensive summary of the following text. 
+                    Focus on the key information and main points:
 
-                {text}
+                    {text}
 
-                Summary:"""
+                    Summary:"""
+                }]
                 
-                stream = ollama.chat(
-                    model=model_name,
-                    messages=[{
-                        'role': 'user',
-                        'content': prompt.format(text=text)
-                    }],
-                    stream=True
-                )
+                stream = ollama.chat(model=model_name, messages=messages, stream=True)
                 
                 for chunk in stream:
                     if 'content' in chunk['message']:
@@ -120,36 +140,30 @@ class OllamaService:
             # For longer texts, use map-reduce approach
             chunks = self._split_text(text)
             chunk_summaries = []
-            map_prompt = """Summarize the following text extract. Focus on key information and main points:
-
-            {text}
-
-            Summary:"""
             
+            # Map phase: Summarize each chunk
             for chunk in chunks:
                 response = ollama.chat(
                     model=model_name,
                     messages=[{
                         'role': 'user',
-                        'content': map_prompt.format(text=chunk)
+                        'content': f"Summarize this text extract:\n\n{chunk}"
                     }]
                 )
                 chunk_summaries.append(response['message']['content'])
             
             # Reduce phase: Combine summaries
             combined_text = "\n\n".join(chunk_summaries)
-            reduce_prompt = """Combine these summaries into a single coherent summary. 
-            Maintain a clear narrative flow and eliminate redundancy:
-
-            {text}
-
-            Final Summary:"""
-            
             stream = ollama.chat(
                 model=model_name,
                 messages=[{
                     'role': 'user',
-                    'content': reduce_prompt.format(text=combined_text)
+                    'content': f"""Combine these summaries into a single coherent summary. 
+                    Maintain a clear narrative flow and eliminate redundancy:
+
+                    {combined_text}
+
+                    Final Summary:"""
                 }],
                 stream=True
             )
@@ -167,59 +181,78 @@ class OllamaService:
 
     def generate_questions(self, text: str, model_name: str, summary: str) -> List[str]:
         """
-        Generates questions based on the document summary.
-        The generated questions will be answered using the full document text.
+        Generates insightful questions based on the document summary.
+        Returns exactly three questions that can be answered using the full document.
         """
         try:
-            few_shot_prompt = """Given a summary, generate exactly three insightful questions.  generated questions will be answered using the full document textThe. Follow these examples precisely:
+            prompt = f"""Based on this document summary, create three specific and insightful questions 
+            that can be answered using the full document:
 
-Example 1:
-Summary: The report analyzes the global coffee industry in 2023, highlighting a 15% increase in sustainable farming practices, significant price fluctuations due to weather events in Brazil, and emerging trends in specialty coffee consumption across Asia.
+            Summary: {summary}
 
-How did extreme weather conditions in Brazil impact global coffee prices and supply chains?
-What specific sustainable farming practices saw the highest adoption rates among coffee producers?
-Which Asian markets showed the most significant growth in specialty coffee consumption and why?
+            Requirements:
+            - Generate exactly three questions
+            - Questions should require detailed answers from the full document
+            - Focus on the most important aspects of the document
+            - Make questions specific rather than general
 
-Example 2:
-Summary: The study examines remote work productivity during 2020-2023, finding that 65% of companies maintained or increased productivity, while noting challenges in collaboration and mental health. New hybrid work models emerged as a preferred solution across various industries.
-
-What specific factors contributed to maintaining or increasing productivity in remote work settings?
-How did companies successfully address collaboration challenges in the remote work environment?
-What were the key characteristics of the most effective hybrid work models implemented?
-
-Now, generate three questions for this summary:
-
-{summary}"""
+            Questions:"""
             
-            messages = [{'role': 'user', 'content': few_shot_prompt.format(summary=summary)}]
+            response = ollama.chat(
+                model=model_name,
+                messages=[{'role': 'user', 'content': prompt}]
+            )
             
-            response = chat(model=model_name, messages=messages)
-            # Skip any lines that aren't questions (like "Questions:" headers)
+            # Extract questions from response
             questions = [
                 line.strip() for line in response['message']['content'].splitlines()
                 if line.strip() and line.strip().endswith('?')
             ]
-            return (questions + [''] * 3)[:3]  # Ensure exactly 3 questions
+            
+            # Ensure exactly three questions
+            return (questions + [''] * 3)[:3]
             
         except Exception as e:
+            print(f"Error generating questions: {e}")
             raise Exception(f"Error generating questions: {e}")
 
-    def generate_answer(self, question: str, document_text: str, model_name: str) -> Generator[StreamResponse, None, None]:
+    def generate_answer(
+        self,
+        question: str,
+        relevant_chunks: List[str],
+        model_name: str
+    ) -> Generator[StreamResponse, None, None]:
         """
-        Generates a detailed answer using the complete document text.
+        Generates an answer using RAG with retrieved context chunks.
+        This is the core of the RAG implementation for question answering.
         """
         try:
-            messages = [{'role': 'user', 'content': f"""Answer the following question with all relevant details from the document:
-
-            Question: {question}
-
-            Document text: {document_text}"""}]
+            # Format context with chunk numbering
+            context_parts = []
+            for i, chunk in enumerate(relevant_chunks, 1):
+                context_parts.append(f"[Context {i}]: {chunk}")
+            context = "\n\n".join(context_parts)
             
-            stream = chat(model=model_name, messages=messages, stream=True)
+            messages = [{
+                'role': 'user',
+                'content': f"""Answer the following question using ONLY the provided context. 
+                If the answer cannot be fully determined from the context, acknowledge this 
+                and explain what can be determined from the available information.
+
+                Question: {question}
+
+                Relevant context:
+                {context}
+
+                Answer:"""
+            }]
+            
+            stream = ollama.chat(model=model_name, messages=messages, stream=True)
             
             for chunk in stream:
                 if 'content' in chunk['message']:
                     yield StreamResponse(content=chunk['message']['content'])
+                    
         except Exception as e:
             yield StreamResponse(
                 content="",

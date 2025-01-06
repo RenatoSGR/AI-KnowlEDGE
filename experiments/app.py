@@ -1,14 +1,25 @@
 import streamlit as st
 from datetime import datetime
 from backend import DocumentProcessor, OllamaService, Message
+from pathlib import Path
 
 class KnowlEdgeApp:
+    """
+    Main application class that handles the document analysis interface.
+    This class coordinates the document processing, RAG-based question answering,
+    and Streamlit interface components.
+    """
+    
     def __init__(self):
+        """Initialize core components of the application."""
         self.document_processor = DocumentProcessor()
         self.ollama_service = OllamaService()
 
     def initialize_session_state(self):
-        """Initialize session state variables."""
+        """
+        Initialize session state variables for maintaining state across Streamlit reruns.
+        Sets up all necessary variables with their default values if they don't exist.
+        """
         initial_states = {
             'processor': self.document_processor,
             'selected_model': None,
@@ -24,38 +35,28 @@ class KnowlEdgeApp:
                 st.session_state[key] = initial_value
 
     def display_app_header(self):
-        """Displays the centered app header with sparkles emojis."""
+        """
+        Display the application header with custom styling.
+        Creates a centered header with color-coded text and sparkle emojis.
+        """
         st.markdown(
             """
             <div style="display: flex; justify-content: center; align-items: center;">
-                <h1 style='text-align: center; margin-bottom: 0;'>✨ <span style='color:#3B82F6'>AI</span> knowl<span style='color:#29A688'>EDGE</span> ✨</h1>
+                <h1 style='text-align: center; margin-bottom: 0;'>
+                    ✨ <span style='color:#3B82F6'>AI</span> knowl<span style='color:#29A688'>EDGE</span> ✨
+                </h1>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    def handle_file_upload(self, uploaded_file):
-        """Handle file upload and process the document."""
-        try:
-            if uploaded_file.name != st.session_state.uploaded_file_name:
-                st.session_state.processor.process_new_document(
-                    uploaded_file.name,
-                    uploaded_file.type,
-                    uploaded_file.getvalue()
-                )
-                st.session_state.uploaded_file_name = uploaded_file.name
-                st.success("New file uploaded and processed!")
-                
-                # Reset states for new document
-                st.session_state.update_counter = 0
-                st.session_state.summary_in_progress = False
-        except Exception as e:
-            st.error(f"Error processing file: {e}")
-
     def display_text_and_summary(self, col1, col2):
-        """Display the extracted text and summary."""
+        """
+        Display the document text and generate/display its summary.
+        Shows the original text in one column and its summary in another,
+        handling token estimation and summary generation.
+        """
         with col1:
-            # Get token count if not already calculated
             if st.session_state.processor.token_count is None and st.session_state.processor.document_text:
                 estimated_tokens = self.ollama_service._estimate_tokens(
                     st.session_state.processor.document_text
@@ -112,20 +113,26 @@ class KnowlEdgeApp:
                     )
 
                 if st.session_state.processor.summary:
-                    if st.button("Regenerate Summary"):
-                        st.session_state.processor.summary = None
-                        st.session_state.summary_in_progress = False
-                        st.rerun()
-
-                    st.download_button(
-                        label="Download Summary",
-                        data=st.session_state.processor.summary,
-                        file_name="summary.txt",
-                        mime="text/plain"
-                    )
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.button("Regenerate Summary"):
+                            st.session_state.processor.summary = None
+                            st.session_state.summary_in_progress = False
+                            st.rerun()
+                    with col2:
+                        st.download_button(
+                            label="Download Summary",
+                            data=st.session_state.processor.summary,
+                            file_name="summary.txt",
+                            mime="text/plain"
+                        )
 
     def display_suggested_questions(self):
-        """Display suggested questions as clickable buttons."""
+        """
+        Generate and display suggested questions about the document.
+        Only generates questions if they haven't been generated yet and
+        displays them as clickable buttons.
+        """
         if not st.session_state.processor.suggested_questions:
             with st.spinner("Generating suggested questions..."):
                 try:
@@ -144,8 +151,65 @@ class KnowlEdgeApp:
                 st.session_state.current_question = question
                 st.session_state.needs_answer = True
 
+    def _handle_question(self, question: str):
+        """
+        Handle individual questions using RAG-enhanced answer generation.
+        This method:
+        1. Records the question in chat history
+        2. Retrieves relevant context using the vector store
+        3. Generates an answer using the retrieved context
+        4. Shows the answer and optionally displays the source context
+        """
+        timestamp = datetime.now()
+        st.session_state.processor.messages.append(Message("user", question, timestamp))
+
+        with st.chat_message("user"):
+            st.markdown(question)
+
+        with st.chat_message("assistant"):
+            placeholder = st.empty()
+            full_response = ""
+            
+            try:
+                # Retrieve relevant context chunks using RAG
+                relevant_chunks = st.session_state.processor.get_relevant_chunks(
+                    question,
+                    k=3  # Get top 3 most relevant chunks
+                )
+                
+                # Generate answer using the retrieved context
+                for response in self.ollama_service.generate_answer(
+                    question,
+                    relevant_chunks,
+                    st.session_state.selected_model
+                ):
+                    if response.is_error:
+                        st.error(response.error_message)
+                        break
+                    
+                    full_response += response.content
+                    placeholder.markdown(full_response)
+                
+                if not response.is_error:
+                    st.session_state.processor.messages.append(
+                        Message("assistant", full_response, datetime.now())
+                    )
+                    
+                    # Show the context used to generate the answer
+                    with st.expander("View source context"):
+                        for i, chunk in enumerate(relevant_chunks, 1):
+                            st.markdown(f"**Context {i}:**")
+                            st.markdown(chunk)
+                            st.markdown("---")
+                    
+            except Exception as e:
+                st.error(f"Error generating answer: {e}")
+
     def handle_chat_interaction(self):
-        """Process chat interactions including suggested questions and direct input."""
+        """
+        Process chat interactions including suggested questions and direct input.
+        Manages the chat interface, message history, and question handling.
+        """
         # Display existing messages
         for message in st.session_state.processor.messages:
             with st.chat_message(message.role):
@@ -162,43 +226,39 @@ class KnowlEdgeApp:
         if prompt := st.chat_input("Ask a question about the document:"):
             self._handle_question(prompt)
 
-    def _handle_question(self, question: str):
-        """Handle a single question and its response."""
-        timestamp = datetime.now()
-        st.session_state.processor.messages.append(Message("user", question, timestamp))
-
-        with st.chat_message("user"):
-            st.markdown(question)
-
-        with st.chat_message("assistant"):
-            placeholder = st.empty()
-            full_response = ""
+    def process_new_document(self, file_name: str, file_type: str, file_bytes: bytes):
+        """
+        Process a new document and reset relevant application state.
+        Handles document processing and initializes RAG components.
+        """
+        try:
+            st.session_state.processor.process_new_document(file_name, file_type, file_bytes)
+            st.session_state.uploaded_file_name = file_name
+            st.success("New file uploaded and processed!")
             
-            try:
-                for response in self.ollama_service.generate_answer(
-                    question,
-                    st.session_state.processor.document_text,
-                    st.session_state.selected_model
-                ):
-                    if response.is_error:
-                        st.error(response.error_message)
-                        break
-                    
-                    full_response += response.content
-                    placeholder.markdown(full_response)
-                
-                if not response.is_error:
-                    st.session_state.processor.messages.append(
-                        Message("assistant", full_response, datetime.now())
-                    )
-            except Exception as e:
-                st.error(f"Error generating answer: {e}")
+            # Reset states for new document
+            st.session_state.update_counter = 0
+            st.session_state.summary_in_progress = False
+            
+        except Exception as e:
+            st.error(f"Error processing file: {e}")
+
+    def handle_file_upload(self, uploaded_file):
+        """Handle file upload and document processing."""
+        if uploaded_file.name != st.session_state.uploaded_file_name:
+            self.process_new_document(
+                uploaded_file.name,
+                uploaded_file.type,
+                uploaded_file.getvalue()
+            )
 
     def run(self):
-        """Main application function."""
+        """
+        Main application entry point. Sets up the interface and manages the application flow.
+        """
         st.set_page_config(page_title="AI KnowlEDGE", layout="wide")
 
-        # Remove margins and padding
+        # Remove margins and padding for better layout
         st.markdown(
             """
             <style>
@@ -240,10 +300,8 @@ class KnowlEdgeApp:
             key="file_uploader"
         )
 
-        # Process document if needed
         if uploaded_file is not None:
-            if st.session_state.uploaded_file_name != uploaded_file.name:
-                self.handle_file_upload(uploaded_file)
+            self.handle_file_upload(uploaded_file)
 
         # Display content if document is loaded
         if st.session_state.processor.document_text and st.session_state.selected_model:
@@ -251,8 +309,9 @@ class KnowlEdgeApp:
             col1, col2 = st.columns(2)
             self.display_text_and_summary(col1, col2)
             
-            st.subheader("Suggested Questions")
-            self.display_suggested_questions()
+            if st.session_state.processor.summary and not st.session_state.summary_in_progress:
+                st.subheader("Suggested Questions")
+                self.display_suggested_questions()
             
             st.subheader("Chat")
             self.handle_chat_interaction()

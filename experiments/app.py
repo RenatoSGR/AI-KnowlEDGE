@@ -179,8 +179,8 @@ class KnowlEdgeApp:
             placeholder = st.empty()
             full_response = ""
             relevant_chunks_for_display = []
-            show_context = False # Flag to show context after generation
 
+            # Use a single spinner that covers both context retrieval and answer generation
             with st.spinner("Generating answer..."):
                 try:
                     # Retrieve relevant context chunks using RAG
@@ -202,13 +202,18 @@ class KnowlEdgeApp:
 
                         full_response += response.content
                         placeholder.markdown(full_response)  # Update the placeholder as text is generated
-                        break # Stop the spinner as soon as we get the first response
 
                     if not response.is_error:
                         st.session_state.chat_history_with_context.append(
                             {"role": "assistant", "content": full_response, "context": relevant_chunks_for_display}
                         )
-                        show_context = True # Set flag to show context
+
+                        if relevant_chunks_for_display:
+                            with st.expander("View source context"):
+                                for i, chunk in enumerate(relevant_chunks_for_display, 1):
+                                    st.markdown(f"**Context {i}:**")
+                                    st.markdown(chunk)
+                                    st.markdown("---")
 
                         st.session_state.processor.messages.append(
                             Message("assistant", full_response, datetime.now())
@@ -216,28 +221,6 @@ class KnowlEdgeApp:
 
                 except Exception as e:
                     st.error(f"Error generating answer: {e}")
-
-            # Continue streaming the answer after the spinner is gone
-            if full_response:
-                for response in self.ollama_service.generate_answer(
-                    question,
-                    relevant_chunks,
-                    st.session_state.selected_model
-                ):
-                    if response.is_error:
-                        st.error(response.error_message)
-                        break
-                    if not response.content in full_response: # Avoid re-printing the first part
-                        full_response += response.content
-                        placeholder.markdown(full_response)
-
-            # Display source context if available and the flag is set
-            if show_context and relevant_chunks_for_display:
-                with st.expander("View source context"): # Removed expanded=True
-                    for i, chunk in enumerate(relevant_chunks_for_display, 1):
-                        st.markdown(f"**Context {i}:**")
-                        st.markdown(chunk)
-                        st.markdown("---")
 
     def handle_chat_interaction(self):
         """

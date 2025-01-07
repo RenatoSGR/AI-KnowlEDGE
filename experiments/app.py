@@ -30,8 +30,8 @@ class KnowlEdgeApp:
             'questions_generated': False,
             'update_counter': 0,
             'display_chunks': False,
-            'chat_history_with_context': [], # Add a list to store chat history with context
-            'extracting_text': False  # Flag for text extraction status
+            'chat_history_with_context': [],
+            'extracting_text': False
         }
 
         for key, initial_value in initial_states.items():
@@ -170,82 +170,101 @@ class KnowlEdgeApp:
         """
         timestamp = datetime.now()
         st.session_state.processor.messages.append(Message("user", question, timestamp))
+
+        # Add user message to chat history first
         st.session_state.chat_history_with_context.append({"role": "user", "content": question})
+
+        # Pre-insert an assistant entry with empty content, indicators for context loading and display
+        st.session_state.chat_history_with_context.append({
+            "role": "assistant",
+            "content": "",
+            "context": [],
+            "context_loaded": False,
+            "context_displayed": False
+        })
 
         with st.chat_message("user"):
             st.markdown(question)
 
-        with st.chat_message("assistant"):
+        # Use a placeholder for the entire assistant message
+        assistant_placeholder = st.empty()
+
+        relevant_chunks_for_display = []
+        with assistant_placeholder.chat_message("assistant"):
             placeholder = st.empty()
             full_response = ""
-            relevant_chunks_for_display = []
 
-            # Use a single spinner that covers both context retrieval and answer generation
             with st.spinner("Generating answer..."):
                 try:
-                    # Retrieve relevant context chunks using RAG
-                    relevant_chunks = st.session_state.processor.get_relevant_chunks(
-                        question,
-                        k=3
-                    )
-                    relevant_chunks_for_display = list(relevant_chunks)
+                    # Retrieve relevant chunks only if they haven't been loaded yet
+                    if not st.session_state.chat_history_with_context[-1]["context_loaded"]:
+                        relevant_chunks = st.session_state.processor.get_relevant_chunks(question, k=3)
+                        relevant_chunks_for_display = list(relevant_chunks)
 
-                    # Generate answer using the retrieved context
+                        # Update the assistant entry with context and set the flag to True
+                        st.session_state.chat_history_with_context[-1]["context"] = relevant_chunks_for_display
+                        st.session_state.chat_history_with_context[-1]["context_loaded"] = True
+
                     for response in self.ollama_service.generate_answer(
                         question,
-                        relevant_chunks,
+                        relevant_chunks_for_display,
                         st.session_state.selected_model
                     ):
                         if response.is_error:
                             st.error(response.error_message)
                             break
-
                         full_response += response.content
-                        placeholder.markdown(full_response)  # Update the placeholder as text is generated
+                        placeholder.markdown(full_response)
 
-                    if not response.is_error:
-                        st.session_state.chat_history_with_context.append(
-                            {"role": "assistant", "content": full_response, "context": relevant_chunks_for_display}
-                        )
+                        # Update the assistant entry's content as we stream
+                        st.session_state.chat_history_with_context[-1]["content"] = full_response
 
-                        if relevant_chunks_for_display:
-                            with st.expander("View source context"):
-                                for i, chunk in enumerate(relevant_chunks_for_display, 1):
-                                    st.markdown(f"**Context {i}:**")
-                                    st.markdown(chunk)
-                                    st.markdown("---")
-
-                        st.session_state.processor.messages.append(
-                            Message("assistant", full_response, datetime.now())
-                        )
+                    st.session_state.processor.messages.append(
+                        Message("assistant", full_response, datetime.now())
+                    )
 
                 except Exception as e:
                     st.error(f"Error generating answer: {e}")
+
+            # Correctly set context_displayed to True only after expander is rendered
+            if relevant_chunks_for_display:
+                with st.expander("View source context"):
+                    for i, chunk in enumerate(relevant_chunks_for_display, 1):
+                        st.markdown(f"**Context {i}:**")
+                        st.markdown(chunk)
+                        st.markdown("---")
+                    # Set context_displayed to True after rendering the expander
+                    st.session_state.chat_history_with_context[-1]["context_displayed"] = True
 
     def handle_chat_interaction(self):
         """
         Process chat interactions including suggested questions and direct input.
         Manages the chat interface, message history, and question handling.
         """
-        # Display existing messages with context
-        for item in st.session_state.chat_history_with_context:
-            with st.chat_message(item["role"]):
-                st.markdown(item["content"])
-                if item["role"] == "assistant" and "context" in item and item["context"]:
-                    if not st.session_state.current_question or item["content"] != st.session_state.chat_history_with_context[-1]["content"]:
-                        with st.expander("View source context"):
-                            for i, chunk in enumerate(item["context"], 1):
-                                st.markdown(f"**Context {i}:**")
-                                st.markdown(chunk)
-                                st.markdown("---")
+        # Create a container for the chat history
+        chat_history_container = st.container()
 
-        # Handle pending questions
+        with chat_history_container:
+            for item in st.session_state.chat_history_with_context:
+                if item["role"] == "user":
+                    with st.chat_message("user"):
+                        st.markdown(item["content"])
+                elif item["role"] == "assistant":
+                    with st.chat_message("assistant"):
+                        st.markdown(item["content"])
+                        if item.get("context") and item.get("context_displayed"):
+                            with st.expander("View source context", expanded=False):
+                                for i, chunk in enumerate(item["context"], 1):
+                                    st.markdown(f"**Context {i}:**")
+                                    st.markdown(chunk)
+                                    st.markdown("---")
+
+        # Handle new question or input
         if st.session_state.needs_answer and st.session_state.current_question:
             self._handle_question(st.session_state.current_question)
             st.session_state.current_question = None
             st.session_state.needs_answer = False
 
-        # Handle new questions
         if prompt := st.chat_input("Ask a question about the document:"):
             self._handle_question(prompt)
 
@@ -266,7 +285,7 @@ class KnowlEdgeApp:
             st.session_state.summary_in_progress = False
             st.session_state.questions_generated = False
             st.session_state.processor.suggested_questions = None
-            st.session_state.chat_history_with_context = [] # Clear chat history
+            st.session_state.chat_history_with_context = []
 
         except Exception as e:
             st.error(f"Error processing file: {e}")
@@ -325,7 +344,7 @@ class KnowlEdgeApp:
 
         # File upload
         uploaded_file = st.file_uploader(
-            "Upload a PDF, DOCX, or TXT file",
+            "Upload a pdf, docx, or txt file",
             type=["pdf", "docx", "txt"],
             key="file_uploader"
         )

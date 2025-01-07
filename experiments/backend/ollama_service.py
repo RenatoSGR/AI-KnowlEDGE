@@ -21,7 +21,7 @@ class OllamaService:
     Manages interactions with Ollama models for text generation.
     Handles model selection, text generation, summarization, and question answering.
     """
-    
+
     def __init__(self):
         """Initialize the Ollama service with default settings."""
         self._available_models: Optional[List[str]] = None
@@ -34,13 +34,13 @@ class OllamaService:
         """
         if not text:
             return 0
-            
+
         # Count various text elements that typically correspond to tokens
         words = text.split()
         punctuation = len(re.findall(r'[.,!?;:"]', text))
         special_chars = len(re.findall(r'[@#$%^&*()<>{}\[\]~`_\-+=|\\]', text))
         numbers = len(re.findall(r'\d+', text))
-        
+
         return len(words) + punctuation + special_chars + numbers
 
     @property
@@ -56,14 +56,14 @@ class OllamaService:
     def _get_available_models(self) -> List[str]:
         """
         Retrieve a list of available Ollama models for text generation.
-        
+
         This method efficiently filters models during the initial extraction using
         the EXCLUDED_MODELS set from our configuration. This combines efficiency
         (filtering during extraction) with maintainability (centralized configuration).
         """
         try:
             items: List[Tuple[str, Any]] = ollama.list()
-            
+
             # Extract and filter models in a single pass, using our configuration
             generation_models = [
                 model.model
@@ -72,7 +72,7 @@ class OllamaService:
                 for model in item[1]
                 if model.model not in EXCLUDED_MODELS
             ]
-            
+
             return generation_models
         except Exception as e:
             print(f"Error retrieving models: {e}")
@@ -87,7 +87,7 @@ class OllamaService:
         chunks = []
         current_chunk = []
         current_size = 0
-        
+
         for paragraph in paragraphs:
             if len(paragraph) > chunk_size:
                 sentences = paragraph.replace('. ', '.\n').split('\n')
@@ -105,10 +105,10 @@ class OllamaService:
                     current_size = 0
                 current_chunk.append(paragraph)
                 current_size += len(paragraph)
-        
+
         if current_chunk:
             chunks.append('\n'.join(current_chunk))
-        
+
         return chunks
 
     def generate_summary(self, text: str, model_name: str) -> Generator[StreamResponse, None, None]:
@@ -118,21 +118,21 @@ class OllamaService:
         """
         try:
             estimated_tokens = self._estimate_tokens(text)
-            
+
             # Use direct summarization for shorter texts
             if estimated_tokens <= self.TOKEN_THRESHOLD:
                 messages = [{
                     'role': 'user',
-                    'content': f"""Create a comprehensive summary of the following text. 
+                    'content': f"""Create a comprehensive summary of the following text.
                     Focus on the key information and main points:
 
                     {text}
 
                     Summary:"""
                 }]
-                
+
                 stream = ollama.chat(model=model_name, messages=messages, stream=True)
-                
+
                 for chunk in stream:
                     if 'content' in chunk['message']:
                         yield StreamResponse(content=chunk['message']['content'])
@@ -141,7 +141,7 @@ class OllamaService:
             # For longer texts, use map-reduce approach
             chunks = self._split_text(text)
             chunk_summaries = []
-            
+
             # Map phase: Summarize each chunk
             for chunk in chunks:
                 response = ollama.chat(
@@ -152,14 +152,14 @@ class OllamaService:
                     }]
                 )
                 chunk_summaries.append(response['message']['content'])
-            
+
             # Reduce phase: Combine summaries
             combined_text = "\n\n".join(chunk_summaries)
             stream = ollama.chat(
                 model=model_name,
                 messages=[{
                     'role': 'user',
-                    'content': f"""Combine these summaries into a single coherent summary. 
+                    'content': f"""Combine these summaries into a single coherent summary.
                     Maintain a clear narrative flow and eliminate redundancy:
 
                     {combined_text}
@@ -168,7 +168,7 @@ class OllamaService:
                 }],
                 stream=True
             )
-            
+
             for chunk in stream:
                 if 'content' in chunk['message']:
                     yield StreamResponse(content=chunk['message']['content'])
@@ -180,39 +180,70 @@ class OllamaService:
                 error_message=f"Error generating summary: {str(e)}"
             )
 
-    def generate_questions(self, text: str, model_name: str, summary: str) -> List[str]:
+    def generate_questions(self, model_name: str, summary: str) -> List[str]:
         """
         Generates insightful questions based on the document summary.
         Returns exactly three questions that can be answered using the full document.
         """
         try:
-            prompt = f"""Based on this document summary, create three specific and insightful questions 
-            that can be answered using the full document:
+            prompt = f"""Based on this document summary, create three specific and insightful questions
+            that can be answered using the full document.
+
+            Here are a few examples of how to format the questions:
+
+            Example 1:
+            Summary: The study investigated the effects of a new drug on patients with hypertension. The results indicated a significant reduction in blood pressure.
+
+            Questions:
+            What was the specific dosage of the new drug used in the study?
+            Were there any reported side effects associated with the drug?
+            How does the effectiveness of this new drug compare to existing treatments for hypertension?
+
+            ---
+            Example 2:
+            Summary:  The article discusses the history of artificial intelligence, highlighting key milestones and influential figures.
+
+            Questions:
+            Who were some of the key pioneers in the field of artificial intelligence mentioned in the article?
+            What were some of the major breakthroughs that significantly advanced AI research?
+            What are some of the ethical considerations discussed regarding the development of advanced AI?
+
+            ---
+            Example 3:
+            Summary: The book review analyzes the main themes and arguments presented in a new novel about climate change.
+
+            Questions:
+            What are the central themes explored in the novel regarding climate change?
+            What are the main arguments the author uses to depict the impact of climate change on society?
+            What is the reviewer's overall assessment of the novel's message and literary merit?
+
+            ---
 
             Summary: {summary}
 
             Requirements:
             - Generate exactly three questions
-            - Questions should require detailed answers from the full document
+            - Questions should require detailed answers from the full text provided
             - Focus on the most important aspects of the document
             - Make questions specific rather than general
+            - The questions are supposed to be different from each other
 
             Questions:"""
-            
+
             response = ollama.chat(
                 model=model_name,
                 messages=[{'role': 'user', 'content': prompt}]
             )
-            
+
             # Extract questions from response
             questions = [
                 line.strip() for line in response['message']['content'].splitlines()
                 if line.strip() and line.strip().endswith('?')
             ]
-            
+
             # Ensure exactly three questions
             return (questions + [''] * 3)[:3]
-            
+
         except Exception as e:
             print(f"Error generating questions: {e}")
             raise Exception(f"Error generating questions: {e}")

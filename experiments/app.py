@@ -140,7 +140,6 @@ class KnowlEdgeApp:
                 with st.spinner("Generating suggested questions..."):
                     try:
                         questions = self.ollama_service.generate_questions(
-                            st.session_state.processor.document_text,
                             st.session_state.selected_model,
                             summary=st.session_state.processor.summary
                         )

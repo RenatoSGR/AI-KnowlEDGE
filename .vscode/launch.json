@@ -1,21 +1,15 @@
 {
-    "version": "0.2.0",
+    "version": "0.1.0",
     "configurations": [
         {
-            "name": "Python Debugger: FastAPI",
+            "name": "debug streamlit",
             "type": "debugpy",
             "request": "launch",
-            "module": "uvicorn",
+            "module": "streamlit",
             "args": [
-                "backend.main:app",
-                "--port", 
-                "8000"
-            ],
-            "jinja": true,
-            "env": {
-                "AZURE_DOCUMENT_ANALYSIS_ENDPOINT": "",
-                "AZURE_DOCUMENT_ANALYSIS_KEY": ""
-            }
+                "run",
+                "experiments/app.py"
+            ]
         }
     ]
-}
+    }

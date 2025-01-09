@@ -1,80 +1,84 @@
-import requests
 import streamlit as st
+from aiproviders import DocumentProcessor, OllamaService
+from ui.components.header import HeaderComponent
+from ui.components.document_viewer import DocumentViewer
+from ui.components.question_suggestions import QuestionSuggestions
+from ui.components.chat_interface import ChatInterface
+from ui.services.state_manager import StateManager
+from ui.services.ui_coordinator import UICoordinator
+from ui.styles.default_styles import STREAMLIT_STYLE
 
-def reset_conversation():
-    st.session_state.conversation = None
-    st.session_state.chat_history = None
-    st.session_state.messages = []
+class KnowlEdgeApp:
+    """
+    Main application class that handles the document analysis interface.
+    This class coordinates the document processing, RAG-based question answering,
+    and Streamlit interface components.
+    """
 
+    def __init__(self):
+        """Initialize core components of the application."""
+        self.document_processor = DocumentProcessor()
+        self.ollama_service = OllamaService()
+        
+        # Initialize services
+        self.state_manager = StateManager(self.document_processor, self.ollama_service)
+        self.ui_coordinator = UICoordinator(self.state_manager)
+        
+        # Initialize UI components
+        self.document_viewer = DocumentViewer(self.ollama_service)
+        self.question_suggestions = QuestionSuggestions(self.ollama_service)
+        self.chat_interface = ChatInterface(self.ollama_service)
 
-def reset_session_state():
-    st.session_state.conversation = None
-    st.session_state.chat_history = None
-    st.session_state.messages = []
-    st.session_state.uploaded_files = []
+    def run(self):
+        """
+        Main application entry point. Sets up the interface and manages the application flow.
+        """
+        st.set_page_config(page_title="AI KnowlEDGE", layout="wide")
 
+        # Apply custom styling
+        st.markdown(STREAMLIT_STYLE, unsafe_allow_html=True)
 
-def display_title():
-    st.title("Doc KnowlEDGE Chat")
-    st.sidebar.header('Upload Menu')
+        # Display header and initialize session state
+        HeaderComponent.render()
+        self.state_manager.initialize_session_state()
 
+        # Model selection
+        available_models = self.ollama_service.available_models
+        if available_models:
+            st.session_state.selected_model = st.selectbox(
+                "Select a model",
+                available_models,
+                key="model_selector"
+            )
+        else:
+            st.warning("No Ollama models found. Please ensure Ollama is running and models are installed.")
+            return
 
-def initialize_session_state():
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+        # File upload
+        uploaded_file = st.file_uploader(
+            "Upload a pdf, docx, or txt file",
+            type=["pdf", "docx", "txt"],
+            key="file_uploader"
+        )
 
-    if 'uploaded_files' not in st.session_state:
-        st.session_state['uploaded_files'] = []
+        if uploaded_file is not None:
+            self.ui_coordinator.handle_file_upload(uploaded_file)
 
+        # Display content if document is loaded
+        if st.session_state.processor.document_text and st.session_state.selected_model:
+            st.subheader("Document Analysis")
+            col1, col2 = st.columns(2)
+            self.document_viewer.display_text_and_summary(col1, col2)
 
-def display_chat_history():
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"], unsafe_allow_html=True)
+            if st.session_state.processor.summary and not st.session_state.summary_in_progress:
+                st.subheader("Suggested Questions")
+                self.question_suggestions.display_suggested_questions()
 
-
-def upload_files():
-    uploaded_files = st.sidebar.file_uploader(
-        'Upload files', type=['pdf', 'txt', 'docx'], 
-        accept_multiple_files=True,
-        key='file_uploader'
-    )
-    if uploaded_files:
-        st.session_state['uploaded_files'].extend(uploaded_files)
-
-
-def analyze_files():
-    if st.session_state['uploaded_files']:
-        for idx, uploaded_file in enumerate(st.session_state['uploaded_files']):
-            files = {'file': uploaded_file.getvalue()}  
-            response = requests.post("http://localhost:8000/analyze/", files=files)  
-            if response.status_code == 200:  
-                st.write(f"Document: {uploaded_file.name}", key=f'document_{idx}')
-                st.write(response.json()["text"], key=f'text_{idx}')
-                return True
-
-
-def handle_user_input():
-    if question := st.chat_input("Ask me anything about your document"):
-        st.chat_message("user").markdown(question)
-        st.session_state.messages.append({"role": "user", "content": question})
-
-        response = requests.post("http://localhost:8000/chat/", json={"question": question})
-
-        if response.status_code == 200:  
-            with st.chat_message("assistant"):
-                reply = response.json().get("response")
-                st.markdown(reply, unsafe_allow_html=True)
-                st.session_state.messages.append({"role": "assistant", "content": reply})
-
-
-def main():
-    display_title()
-    initialize_session_state()
-    upload_files()
-    if analyze_files():
-        display_chat_history()
-        handle_user_input()
+            st.subheader("Chat")
+            self.chat_interface.handle_chat_interaction()
+        elif not st.session_state.selected_model and available_models:
+            st.info("Please select a model to proceed.")
 
 if __name__ == "__main__":
-    main()
+    app = KnowlEdgeApp()
+    app.run()

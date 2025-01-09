@@ -20,15 +20,7 @@ services:
     ports:  
       - "8000:8000"  
     networks:  
-      - ocrvnet  
-  
-  streamlit:  
-    container_name: streamlit  
-    build: ./frontend  
-    ports:  
-      - "8501:8501"  
-    networks:  
-      - ocrvnet  
+      - ocrvnet
   
 networks:  
   ocrvnet:  

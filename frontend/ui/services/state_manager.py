@@ -1,5 +1,5 @@
 import streamlit as st
-from backend import DocumentProcessor, OllamaService
+from aiproviders import DocumentProcessor, OllamaService
 
 class StateManager:
     def __init__(self, document_processor: DocumentProcessor, ollama_service: OllamaService):

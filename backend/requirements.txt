@@ -3,3 +3,8 @@ uvicorn
 azure-ai-formrecognizer 
 python-multipart
 streamlit
+python-docx
+chromadb
+langchain
+PyPDF2
+ollama

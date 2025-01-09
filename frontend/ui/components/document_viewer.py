@@ -1,5 +1,5 @@
 import streamlit as st
-from backend import OllamaService
+from aiproviders import OllamaService
 
 class DocumentViewer:
     def __init__(self, ollama_service: OllamaService):

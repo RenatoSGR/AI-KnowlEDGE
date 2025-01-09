@@ -1,6 +1,6 @@
 import streamlit as st
 from datetime import datetime
-from backend import Message, OllamaService
+from aiproviders import Message, OllamaService
 
 class ChatInterface:
     def __init__(self, ollama_service: OllamaService):

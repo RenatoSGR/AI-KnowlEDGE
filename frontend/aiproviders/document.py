@@ -6,6 +6,7 @@ from datetime import datetime
 from .message import Message
 from .vector_store import VectorStore
 from .config import NUM_CHUNKS_TO_RETRIEVE
+import requests
 
 class DocumentProcessor:
     def __init__(self):
@@ -41,10 +42,19 @@ class DocumentProcessor:
                 raise ValueError("Unsupported file type")
         except Exception as e:
             raise Exception(f"Error extracting text: {e}")
+        
+
+    def extract_text_ocr(self, file_name: str, file_type: str, file_bytes: bytes) -> Optional[str]:
+        files = {'file': file_bytes}  
+        response = requests.post("http://localhost:8000/analyze/", files=files)
+        if response.status_code == 200:  
+            response = response.json()["text"]
+            return response
+
 
     def process_new_document(self, file_name: str, file_type: str, file_bytes: bytes) -> None:
         # Extract text and reset states as before
-        self.document_text = self.extract_text(file_name, file_type, file_bytes)
+        self.document_text = self.extract_text_ocr(file_name, file_type, file_bytes)
         self.summary = None
         self.suggested_questions = None
         self.messages = []

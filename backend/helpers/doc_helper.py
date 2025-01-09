@@ -3,10 +3,14 @@
 import os
 from azure.ai.formrecognizer import DocumentAnalysisClient
 from azure.core.credentials import AzureKeyCredential
+from dotenv import load_dotenv
 
 def get_result(file_content):
-    endpoint = os.environ.get("AZURE_DOCUMENT_ANALYSIS_ENDPOINT")
-    key = os.environ.get("AZURE_DOCUMENT_ANALYSIS_KEY")
+    load_dotenv()
+    
+    endpoint = os.getenv("AZURE_DOCUMENT_ANALYSIS_ENDPOINT")
+    key = os.getenv("AZURE_DOCUMENT_ANALYSIS_KEY")
+
 
     azure_document_intelligence_client = DocumentAnalysisClient(
         endpoint=endpoint, 
@@ -15,15 +19,14 @@ def get_result(file_content):
     poller = azure_document_intelligence_client.begin_analyze_document("prebuilt-read", file_content)
     result = poller.result()
 
-    analysis_result = []
+    return "\n".join(get_paragraphs(result))
 
-    analysis_result.append(check_handwritten_content(result))
-    for page in result.pages:
-        analysis_result.append(analyze_page(page))
-    for table_idx, table in enumerate(result.tables):
-        analysis_result.append(analyze_table(table_idx, table))
 
-    return "\n".join(analysis_result)
+def get_paragraphs(result):
+    paragraphs = []
+    for paragaraph in result.paragraphs:
+        paragraphs.append(paragaraph.content)
+    return paragraphs
 
 
 def _in_span(word, spans):

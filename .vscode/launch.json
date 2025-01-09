@@ -11,11 +11,7 @@
                 "--port", 
                 "8000"
             ],
-            "jinja": true,
-            "env": {
-                "AZURE_DOCUMENT_ANALYSIS_ENDPOINT": "<<>>",
-                "AZURE_DOCUMENT_ANALYSIS_KEY": "<<>>"
-            }
+            "jinja": true
         }
     ]
 }

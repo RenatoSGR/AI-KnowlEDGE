@@ -13,8 +13,8 @@
             ],
             "jinja": true,
             "env": {
-                "AZURE_DOCUMENT_ANALYSIS_ENDPOINT": "a",
-                "AZURE_DOCUMENT_ANALYSIS_KEY": "a"
+                "AZURE_DOCUMENT_ANALYSIS_ENDPOINT": "<endpoint>",
+                "AZURE_DOCUMENT_ANALYSIS_KEY": "<key>"
             }
         }
     ]

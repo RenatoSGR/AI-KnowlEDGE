@@ -210,4 +210,5 @@ build/
 *.pdf
 .DS_Store
 
-launch.json
+.vscode
+!.vscode/launch.json

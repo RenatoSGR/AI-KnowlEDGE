@@ -10,3 +10,4 @@ PyPDF2
 ollama
 azure-ai-documentintelligence==1.0.0b4
 python-dotenv
+azure-ai-textanalytics==5.3.0

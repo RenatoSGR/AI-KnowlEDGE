@@ -11,7 +11,7 @@ class UICoordinator:
         """
         st.session_state.extracting_text = True
         try:
-            with st.spinner("Extracting text from document..."):
+            with st.spinner("Azure Document Intelligence is extracting content..."):
                 st.session_state.processor.process_new_document(file_name, file_type, file_bytes)
                 st.session_state.uploaded_file_name = file_name
                 st.success("New file uploaded and processed!")

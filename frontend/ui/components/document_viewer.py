@@ -23,7 +23,7 @@ class DocumentViewer:
                 if st.session_state.processor.token_count is not None else ""
             ), expanded=True):
                 if st.session_state.extracting_text:
-                    st.info("Extracting text from document...")
+                    st.info("Azure Document Intelligence is extracting content...")
                 else:
                     st.text_area(
                         "",
@@ -36,7 +36,7 @@ class DocumentViewer:
             with st.expander("Summary", expanded=True):
                 if not st.session_state.processor.summary and not st.session_state.summary_in_progress:
                     text_area_placeholder = st.empty()
-                    with st.spinner("Generating summary..."):
+                    with st.spinner("Azure Text Analytics Summary is running..."):
                         st.session_state.summary_in_progress = True
                         full_response = ""
 

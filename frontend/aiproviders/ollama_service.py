@@ -186,36 +186,8 @@ class OllamaService:
         Returns exactly three questions that can be answered using the full document.
         """
         try:
-            prompt = f"""Based on this document summary, create three specific and insightful questions
-            that can be answered using the full document.
-
-            Here are a few examples of how to format the questions:
-
-            Example 1:
-            Summary: The study investigated the effects of a new drug on patients with hypertension. The results indicated a significant reduction in blood pressure.
-
-            Questions:
-            What was the specific dosage of the new drug used in the study?
-            Were there any reported side effects associated with the drug?
-            How does the effectiveness of this new drug compare to existing treatments for hypertension?
-
-            ---
-            Example 2:
-            Summary:  The article discusses the history of artificial intelligence, highlighting key milestones and influential figures.
-
-            Questions:
-            Who were some of the key pioneers in the field of artificial intelligence mentioned in the article?
-            What were some of the major breakthroughs that significantly advanced AI research?
-            What are some of the ethical considerations discussed regarding the development of advanced AI?
-
-            ---
-            Example 3:
-            Summary: The book review analyzes the main themes and arguments presented in a new novel about climate change.
-
-            Questions:
-            What are the central themes explored in the novel regarding climate change?
-            What are the main arguments the author uses to depict the impact of climate change on society?
-            What is the reviewer's overall assessment of the novel's message and literary merit?
+            prompt = f"""Based on this document, create three specific and insightful questions
+            that can be answered.
 
             ---
 

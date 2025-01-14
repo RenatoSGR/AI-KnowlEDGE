@@ -1,5 +1,7 @@
+import time
 import streamlit as st
 from aiproviders import OllamaService
+import requests
 
 class DocumentViewer:
     def __init__(self, ollama_service: OllamaService):
@@ -41,15 +43,12 @@ class DocumentViewer:
                         full_response = ""
 
                         try:
-                            for response in self.ollama_service.generate_summary(
-                                st.session_state.processor.document_text,
-                                st.session_state.selected_model
-                            ):
-                                if response.is_error:
-                                    st.error(response.error_message)
-                                    break
+                            text_content = st.session_state.processor.document_text
+                            text_summary = requests.post("http://localhost:8000/summarize/", json={"content": text_content})
+                            response = str(text_summary.json()["summary"])
 
-                                full_response += response.content
+                            for response in response.split():
+                                full_response += response + " "
                                 text_area_placeholder.text_area(
                                     "",
                                     value=full_response,
@@ -57,9 +56,9 @@ class DocumentViewer:
                                     key=f"summary_stream_{st.session_state.update_counter}"
                                 )
                                 st.session_state.update_counter += 1
+                                time.sleep(0.05)
 
-                            if not response.is_error:
-                                st.session_state.processor.summary = full_response
+                            st.session_state.processor.summary = full_response
                         finally:
                             st.session_state.summary_in_progress = False
                 else:

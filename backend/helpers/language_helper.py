@@ -15,7 +15,7 @@ def get_summary(document):
 
 
     poller = client.begin_analyze_actions(
-        document,
+        [document],
         actions=[
             ExtractiveSummaryAction(max_sentence_count=4)
         ],
@@ -24,9 +24,8 @@ def get_summary(document):
     document_results = poller.result()
 
     global_summary = ""
-
     for result in document_results:
-        extract_summary_result = result[0]  # first document, first result
+        extract_summary_result = result[0]
         global_summary += " ".join([sentence.text for sentence in extract_summary_result.sentences])
 
     return global_summary

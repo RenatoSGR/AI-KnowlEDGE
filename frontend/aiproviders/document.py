@@ -19,29 +19,6 @@ class DocumentProcessor:
         
         # Add vector store for RAG
         self.vector_store = VectorStore()
-    
-    def extract_text(self, file_name: str, file_type: str, file_bytes: bytes) -> Optional[str]:
-        # Your existing extract_text implementation - unchanged
-        try:
-            if file_type == "application/pdf":
-                with io.BytesIO(file_bytes) as file_like_object:
-                    pdf_reader = PyPDF2.PdfReader(file_like_object)
-                    text = ""
-                    for page in pdf_reader.pages:
-                        text += page.extract_text()
-                    return text
-            elif file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-                doc = docx.Document(io.BytesIO(file_bytes))
-                text = ""
-                for para in doc.paragraphs:
-                    text += para.text + "\n"
-                return text
-            elif file_type == "text/plain":
-                return file_bytes.decode('utf-8')
-            else:
-                raise ValueError("Unsupported file type")
-        except Exception as e:
-            raise Exception(f"Error extracting text: {e}")
         
 
     def extract_text_ocr(self, file_name: str, file_type: str, file_bytes: bytes) -> Optional[str]:

@@ -11,16 +11,19 @@ services:
       - "5000:5000"  
     networks:  
       - ocrvnet  
-  
-  fastapi-server:  
-    container_name: fastapi-server  
-    build: ./backend  
+
+
+  azure-cognitive-services-textanalytics-summarization:  
+    container_name: AbstractiveSummarization 
+    image: mcr.microsoft.com/azure-cognitive-services/textanalytics/summarization:cpu  
     environment:  
-      - API_KEY=<your-form-recognizer-api-key>
+      - EULA=accept  
+      - billing=<your-summary-endpoint> 
+      - apiKey=<your-summary-api-key> 
     ports:  
-      - "8000:8000"  
+      - "5001:5001"  
     networks:  
-      - ocrvnet
+      - ocrvnet  
   
 networks:  
   ocrvnet:  

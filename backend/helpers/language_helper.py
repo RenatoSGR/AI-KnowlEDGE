@@ -1,63 +1,94 @@
 import os
-from azure.ai.textanalytics import TextAnalyticsClient
-from azure.core.credentials import AzureKeyCredential
+import re
+import time
+import requests
+
+from urllib.parse import urlparse
 from dotenv import load_dotenv
-from azure.ai.textanalytics import TextAnalyticsClient, ExtractiveSummaryAction
+
+
+load_dotenv()
+API_ENDPOINT = os.environ.get('LANGUAGE_ENDPOINT')
+API_KEY = os.environ.get('LANGUAGE_KEY')
 
 
 def get_extractive_summary(document):
-    load_dotenv()
+    response = start_analyze_text_job(document)
+    job_id = parse_http_header(response.headers, response.status_code)
+    if job_id:
+        job_result = fetch_job_result(job_id)
+        return extract_paragraph_from_result(job_result)
+    else:
+        raise Exception("Failed to retrieve job ID")
     
-    key = os.environ.get('LANGUAGE_KEY')
-    endpoint = os.environ.get('LANGUAGE_ENDPOINT')
 
-    client = authenticate_client(key, endpoint)
-
-
-    poller = client.begin_analyze_actions(
-        [document],
-        actions=[
-            ExtractiveSummaryAction(max_sentence_count=4)
-        ],
-    )
-
-    document_results = poller.result()
-
-    global_summary = ""
-    for result in document_results:
-        extract_summary_result = result[0]
-        global_summary += " ".join([sentence.text for sentence in extract_summary_result.sentences])
-
-    return global_summary
+def extract_job_id(operation_location):
+    parsed_url = urlparse(operation_location)
+    match = re.search(r'/jobs/([^/?]+)', parsed_url.path)
+    return match.group(1) if match else None
 
 
+def get_analyze_text_job(job_id):
+    url = f"{API_ENDPOINT}/language/analyze-text/jobs/{job_id}?api-version=2023-04-01"
+    headers = {
+        "Content-Type": "application/json",
+        "Ocp-Apim-Subscription-Key": API_KEY
+    }
+    response = requests.get(url, headers=headers)
+    return response.json()
 
-def authenticate_client(key, endpoint):
-    ta_credential = AzureKeyCredential(key)
-    text_analytics_client = TextAnalyticsClient(
-            endpoint=endpoint, 
-            credential=ta_credential)
-    return text_analytics_client
+
+def parse_http_header(headers, status_code):
+    operation_location = headers.get('Operation-Location')
+    if status_code == 202 and operation_location:
+        return extract_job_id(operation_location)
+    return None
 
 
-def get_abstractive_summary(document):
-    load_dotenv()
+def fetch_job_result(job_id):
+    while True:
+        job_result = get_analyze_text_job(job_id)
+        status = job_result.get('status')
+        if status == 'succeeded':
+            return job_result
+        elif status in ['failed', 'cancelled']:
+            raise Exception(f"Job {status}")
+        time.sleep(2)
 
-    key = os.environ.get('LANGUAGE_KEY')
-    endpoint = os.environ.get('LANGUAGE_ENDPOINT')
 
-    text_analytics_client = TextAnalyticsClient(
-        endpoint=endpoint,
-        credential=AzureKeyCredential(key),
-    )
+def extract_paragraph_from_result(job_result):
+    paragraph = ""
+    for item in job_result['tasks']['items']:
+        for document in item['results']['documents']:
+            for sentence in document['sentences']:
+                paragraph += sentence['text']
+    return paragraph
 
-    poller = text_analytics_client.begin_abstract_summary([document])
-    abstract_summary_results = poller.result()
 
-    output = ""
-    for result in abstract_summary_results:
-        if result.kind == "AbstractiveSummarization":
-            for summary in result.summaries:
-                output += summary.text
 
-    return output
+def start_analyze_text_job(document):
+    url = f"{API_ENDPOINT}/language/analyze-text/jobs?api-version=2023-04-01"
+    headers = {
+        "Content-Type": "application/json",
+        "Ocp-Apim-Subscription-Key": API_KEY
+    }
+    data = {
+        "displayName": "Text Extractive Summarization",
+        "analysisInput": {
+            "documents": [
+                {
+                    "id": "1",
+                    "language": "en",
+                    "text": document
+                }
+            ]
+        },
+        "tasks": [
+            {
+                "kind": "ExtractiveSummarization",
+                "taskName": "Text Extractive Summarization Task 1"
+            }
+        ]
+    }
+    response = requests.post(url, headers=headers, json=data)
+    return response

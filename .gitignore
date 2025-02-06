@@ -209,3 +209,6 @@ build/
 # pdf
 *.pdf
 .DS_Store
+
+# folders
+SummarizationModel/

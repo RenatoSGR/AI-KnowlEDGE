@@ -9,7 +9,7 @@
             "args": [
                 "backend.main:app",
                 "--port", 
-                "8001"
+                "8000"
             ],
             "jinja": true
         }

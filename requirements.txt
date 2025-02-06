@@ -4,7 +4,8 @@ azure-ai-formrecognizer
 python-multipart
 streamlit
 python-docx
-chromadb
+chroma-hnswlib==0.7.6
+chromadb==0.6.1
 langchain
 PyPDF2
 ollama

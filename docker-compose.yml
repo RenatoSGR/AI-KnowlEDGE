@@ -5,25 +5,24 @@ services:
     image: mcr.microsoft.com/azure-cognitive-services/form-recognizer/read-3.1  
     environment:  
       - EULA=accept  
-      - billing=<your-form-recognizer-endpoint> 
-      - apiKey=<your-form-recognizer-api-key> 
+      - billing=<document-intelligence-endpoint>
+      - apiKey=<document-intelligence-key>
     ports:  
       - "5000:5000"  
     networks:  
-      - ocrvnet  
+      - ocrvnet
 
-
-  azure-cognitive-services-textanalytics-summarization:  
-    container_name: AbstractiveSummarization 
-    image: mcr.microsoft.com/azure-cognitive-services/textanalytics/summarization:cpu  
-    environment:  
-      - EULA=accept  
-      - billing=<your-summary-endpoint> 
-      - apiKey=<your-summary-api-key> 
-    ports:  
-      - "5001:5001"  
-    networks:  
-      - ocrvnet  
+  textanalytics:
+    image: mcr.microsoft.com/azure-cognitive-services/textanalytics/summarization:cpu
+    environment:
+      - eula=accept
+      - rai_terms=accept
+      - billing=<language-endoint>
+      - apikey=<language-key> 
+    volumes:
+      - "C:\\ExtractiveModel:/models" 
+    ports:
+      - "5001:5000"
   
 networks:  
   ocrvnet:  

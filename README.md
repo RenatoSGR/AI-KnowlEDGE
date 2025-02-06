@@ -114,12 +114,22 @@ To get a local copy up and running follow these simple example steps.
     cd EdgeAIDoc
     ```
 
-2. Install Node.js dependencies:
+2. Install Docker and pull container:
     ```sh
-    cd frontend
-    npm install
+    docker pull mcr.microsoft.com/azure-cognitive-services/textanalytics/summarization:cpu
     ```
-
+3. Retrieve your Cognitive Services keys and endpoints. You will need the following information
+    ```
+    AZURE_DOCUMENT_ANALYSIS_ENDPOINT
+    AZURE_DOCUMENT_ANALYSIS_KEY
+    LANGUAGE_ENDPOINT
+    LANGUAGE_KEY
+    ```
+4. Create a folder on your C:/ drive and name it `ExtractiveModel`
+5. Now download the SLMs for the Summarization Service. Start Docker and run the following code in your terminal
+    ```sh
+    docker run -v C:\ExtractiveModel:/models mcr.microsoft.com/azure-cognitive-services/textanalytics/summarization:cpu downloadModels=ExtractiveSummarization billing=LANGUAGE_ENDPOINT apikey=LANGUAGE_KEY
+    ```
 3. Set up Python environment and install dependencies:
     ```sh
     cd backend

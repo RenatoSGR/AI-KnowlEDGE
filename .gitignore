@@ -212,3 +212,6 @@ build/
 
 # folders
 SummarizationModel/
+
+
+docker-compose.yml

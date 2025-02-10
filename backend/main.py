@@ -25,5 +25,5 @@ async def analyze_document_content(file: UploadFile = File(...)):
 
 @app.post("/summarize/")
 async def chat(text_content: TextContent):
-    summary = get_extractive_summary(text_content.content)
+    summary = get_extractive_summary(text_content.content, num_sentences=4)
     return {"summary": summary}

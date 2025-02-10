@@ -12,8 +12,8 @@ API_ENDPOINT = os.environ.get('LANGUAGE_ENDPOINT')
 API_KEY = os.environ.get('LANGUAGE_KEY')
 
 
-def get_extractive_summary(document):
-    response = start_analyze_text_job(document)
+def get_extractive_summary(document, num_sentences):
+    response = start_analyze_text_job(document, num_sentences)
     job_id = parse_http_header(response.headers, response.status_code)
     if job_id:
         job_result = fetch_job_result(job_id)
@@ -66,7 +66,7 @@ def extract_paragraph_from_result(job_result):
 
 
 
-def start_analyze_text_job(document):
+def start_analyze_text_job(document, num_sentences):
     url = f"{API_ENDPOINT}/language/analyze-text/jobs?api-version=2023-04-01"
     headers = {
         "Content-Type": "application/json",
@@ -86,7 +86,10 @@ def start_analyze_text_job(document):
         "tasks": [
             {
                 "kind": "ExtractiveSummarization",
-                "taskName": "Text Extractive Summarization Task 1"
+                "taskName": "Text Extractive Summarization Task 1",
+                "parameters": {
+                    "sentenceCount": num_sentences
+                }
             }
         ]
     }

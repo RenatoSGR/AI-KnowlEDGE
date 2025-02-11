@@ -7,13 +7,20 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from .helpers.doc_helper import get_result
 from .helpers.language_helper import get_extractive_summary
-from .helpers.ollama_helper import get_nb_tokens, get_available_models
+from .helpers.ollama_helper import get_nb_tokens, get_available_models, generate_questions
 
 
 app = FastAPI()  
 
+
 class TextContent(BaseModel):
     content: str
+
+
+class SummaryContent(BaseModel):
+    content: str
+    model_name: str
+
 
 @app.post("/analyze/")  
 async def analyze_document_content(file: UploadFile = File(...)):  
@@ -23,6 +30,7 @@ async def analyze_document_content(file: UploadFile = File(...)):
     except UnicodeDecodeError:
         text = content.decode('latin-1')[:300]
     return {"text": text}  
+
 
 @app.post("/summarize/")
 async def chat(text_content: TextContent):
@@ -39,3 +47,9 @@ async def estimate_tokens(text_content: TextContent):
 @app.get("/get_models/")
 async def get_models():
     return {"available_models": get_available_models()}
+
+
+@app.post("/generate_questions/")
+async def get_ollama_questions(summary_content: SummaryContent):
+    questions = generate_questions(summary_content.model_name, summary_content.content)
+    return {"questions": questions}

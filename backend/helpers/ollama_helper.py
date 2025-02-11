@@ -87,3 +87,44 @@ def split_text(text: str, chunk_size: int = 2000) -> List[str]:
             chunks.append('\n'.join(current_chunk))
 
         return chunks
+
+
+def generate_questions(model_name: str, summary: str) -> List[str]:
+    """
+    Generates insightful questions based on the document summary.
+    Returns exactly three questions that can be answered using the full document.
+    """
+    try:
+        prompt = f"""Based on this document, create three specific and insightful questions
+        that can be answered.
+
+        ---
+
+        Summary: {summary}
+
+        Requirements:
+        - Generate exactly three questions
+        - Questions should require detailed answers from the full text provided
+        - Focus on the most important aspects of the document
+        - Make questions specific rather than general
+        - The questions are supposed to be different from each other
+
+        Questions:"""
+
+        response = ollama.chat(
+            model=model_name,
+            messages=[{'role': 'user', 'content': prompt}]
+        )
+
+        # Extract questions from response
+        questions = [
+            line.strip() for line in response['message']['content'].splitlines()
+            if line.strip() and line.strip().endswith('?')
+        ]
+
+        # Ensure exactly three questions
+        return (questions + [''] * 3)[:3]
+
+    except Exception as e:
+        print(f"Error generating questions: {e}")
+        raise Exception(f"Error generating questions: {e}")

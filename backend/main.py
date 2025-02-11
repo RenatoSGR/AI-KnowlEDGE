@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from .helpers.doc_helper import get_result
 from .helpers.language_helper import get_extractive_summary
-from .helpers.ollama_helper import get_nb_tokens
+from .helpers.ollama_helper import get_nb_tokens, get_available_models
 
 
 app = FastAPI()  
@@ -34,3 +34,8 @@ async def chat(text_content: TextContent):
 async def estimate_tokens(text_content: TextContent):
     nb_tokens = get_nb_tokens(text_content.content)
     return {"nb_tokens": nb_tokens}
+
+
+@app.get("/get_models/")
+async def get_models():
+    return {"available_models": get_available_models()}

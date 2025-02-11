@@ -45,29 +45,8 @@ class OllamaService:
         return self._available_models
 
     def _get_available_models(self) -> List[str]:
-        """
-        Retrieve a list of available Ollama models for text generation.
-
-        This method efficiently filters models during the initial extraction using
-        the EXCLUDED_MODELS set from our configuration. This combines efficiency
-        (filtering during extraction) with maintainability (centralized configuration).
-        """
-        try:
-            items: List[Tuple[str, Any]] = ollama.list()
-
-            # Extract and filter models in a single pass, using our configuration
-            generation_models = [
-                model.model
-                for item in items
-                if isinstance(item, tuple) and item[0] == 'models'
-                for model in item[1]
-                if model.model not in EXCLUDED_MODELS
-            ]
-
-            return generation_models
-        except Exception as e:
-            print(f"Error retrieving models: {e}")
-            return []
+        generation_models = requests.get("http://localhost:8000/get_models/").json()["available_models"]
+        return generation_models
 
     def _split_text(self, text: str, chunk_size: int = 2000) -> List[str]:
         """

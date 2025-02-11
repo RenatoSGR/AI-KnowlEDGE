@@ -8,5 +8,10 @@ class TestOllamaService(unittest.TestCase):
         nb_tokens = int(response.json()["nb_tokens"])
         self.assertEqual(nb_tokens, 16)
 
+    def test_available_models(self):
+        available_models = requests.get("http://localhost:8000/get_models/").json()["available_models"]
+        print(available_models)
+        self.assertIsInstance(available_models, list)
+
 if __name__ == '__main__':
     unittest.main()

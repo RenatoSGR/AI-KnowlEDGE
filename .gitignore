@@ -168,6 +168,10 @@ dist/
 out/
 release/
 
+#Docker
+docker-compose.yaml
+docker-compose.yml
+
 # FastAPI
 *.db
 *.sqlite3

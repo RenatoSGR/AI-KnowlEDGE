@@ -53,3 +53,37 @@ def get_available_models() -> List[str]:
     except Exception as e:
         print(f"Error retrieving models: {e}")
         return []
+    
+
+def split_text(text: str, chunk_size: int = 2000) -> List[str]:
+        """
+        Splits text into smaller chunks while trying to maintain context.
+        Uses paragraph and sentence boundaries for natural splits.
+        """
+        paragraphs = text.split('\n\n')
+        chunks = []
+        current_chunk = []
+        current_size = 0
+
+        for paragraph in paragraphs:
+            if len(paragraph) > chunk_size:
+                sentences = paragraph.replace('. ', '.\n').split('\n')
+                for sentence in sentences:
+                    if current_size + len(sentence) > chunk_size and current_chunk:
+                        chunks.append('\n'.join(current_chunk))
+                        current_chunk = []
+                        current_size = 0
+                    current_chunk.append(sentence)
+                    current_size += len(sentence)
+            else:
+                if current_size + len(paragraph) > chunk_size and current_chunk:
+                    chunks.append('\n'.join(current_chunk))
+                    current_chunk = []
+                    current_size = 0
+                current_chunk.append(paragraph)
+                current_size += len(paragraph)
+
+        if current_chunk:
+            chunks.append('\n'.join(current_chunk))
+
+        return chunks

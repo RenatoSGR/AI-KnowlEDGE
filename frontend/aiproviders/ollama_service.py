@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from ollama import chat
 from .config import EXCLUDED_MODELS, TOKEN_THRESHOLD
 
+
 @dataclass
 class StreamResponse:
     """
@@ -18,14 +19,9 @@ class StreamResponse:
     error_message: Optional[str] = None
     relevant_chunks: List[str] = field(default_factory=list)
 
-class OllamaService:
-    """
-    Manages interactions with Ollama models for text generation.
-    Handles model selection, text generation, summarization, and question answering.
-    """
 
+class OllamaService:
     def __init__(self):
-        """Initialize the Ollama service with default settings."""
         self._available_models: Optional[List[str]] = None
         self.TOKEN_THRESHOLD = TOKEN_THRESHOLD
 
@@ -36,10 +32,6 @@ class OllamaService:
 
     @property
     def available_models(self) -> List[str]:
-        """
-        Retrieves and caches the list of available models for text generation.
-        Uses lazy loading to fetch models only when needed.
-        """
         if self._available_models is None:
             self._available_models = self._get_available_models()
         return self._available_models
@@ -47,39 +39,6 @@ class OllamaService:
     def _get_available_models(self) -> List[str]:
         generation_models = requests.get("http://localhost:8000/get_models/").json()["available_models"]
         return generation_models
-
-    def _split_text(self, text: str, chunk_size: int = 2000) -> List[str]:
-        """
-        Splits text into smaller chunks while trying to maintain context.
-        Uses paragraph and sentence boundaries for natural splits.
-        """
-        paragraphs = text.split('\n\n')
-        chunks = []
-        current_chunk = []
-        current_size = 0
-
-        for paragraph in paragraphs:
-            if len(paragraph) > chunk_size:
-                sentences = paragraph.replace('. ', '.\n').split('\n')
-                for sentence in sentences:
-                    if current_size + len(sentence) > chunk_size and current_chunk:
-                        chunks.append('\n'.join(current_chunk))
-                        current_chunk = []
-                        current_size = 0
-                    current_chunk.append(sentence)
-                    current_size += len(sentence)
-            else:
-                if current_size + len(paragraph) > chunk_size and current_chunk:
-                    chunks.append('\n'.join(current_chunk))
-                    current_chunk = []
-                    current_size = 0
-                current_chunk.append(paragraph)
-                current_size += len(paragraph)
-
-        if current_chunk:
-            chunks.append('\n'.join(current_chunk))
-
-        return chunks
 
 
     def generate_questions(self, model_name: str, summary: str) -> List[str]:

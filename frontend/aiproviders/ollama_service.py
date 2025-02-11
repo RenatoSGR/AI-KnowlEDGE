@@ -1,8 +1,10 @@
+import ollama
+import requests
+
 from typing import List, Any, Tuple, Optional, Generator, Dict
 from dataclasses import dataclass, field
-import ollama
+
 from ollama import chat
-import re
 from .config import EXCLUDED_MODELS, TOKEN_THRESHOLD
 
 @dataclass
@@ -28,20 +30,9 @@ class OllamaService:
         self.TOKEN_THRESHOLD = TOKEN_THRESHOLD
 
     def _estimate_tokens(self, text: str) -> int:
-        """
-        Provides a rough estimation of tokens in a text string.
-        This helps in deciding when to chunk text for processing.
-        """
-        if not text:
-            return 0
-
-        # Count various text elements that typically correspond to tokens
-        words = text.split()
-        punctuation = len(re.findall(r'[.,!?;:"]', text))
-        special_chars = len(re.findall(r'[@#$%^&*()<>{}\[\]~`_\-+=|\\]', text))
-        numbers = len(re.findall(r'\d+', text))
-
-        return len(words) + punctuation + special_chars + numbers
+        response = requests.post("http://localhost:8000/estimate_tokens/", json={"content": text})
+        nb_tokens = int(response.json()["nb_tokens"])
+        return nb_tokens
 
     @property
     def available_models(self) -> List[str]:

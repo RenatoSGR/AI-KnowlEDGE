@@ -7,6 +7,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from .helpers.doc_helper import get_result
 from .helpers.language_helper import get_extractive_summary
+from .helpers.ollama_helper import get_nb_tokens
 
 
 app = FastAPI()  
@@ -27,3 +28,9 @@ async def analyze_document_content(file: UploadFile = File(...)):
 async def chat(text_content: TextContent):
     summary = get_extractive_summary(text_content.content, num_sentences=4)
     return {"summary": summary}
+
+
+@app.post("/estimate_tokens/")
+async def estimate_tokens(text_content: TextContent):
+    nb_tokens = get_nb_tokens(text_content.content)
+    return {"nb_tokens": nb_tokens}

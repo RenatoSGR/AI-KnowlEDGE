@@ -28,7 +28,7 @@ async def analyze_document_content(file: UploadFile = File(...)):
     try:
         text = get_result(content)
     except UnicodeDecodeError:
-        text = content.decode('latin-1')[:300]
+        text = "Error reading file contents. Please upload a valid file."
     return {"text": text}  
 
 

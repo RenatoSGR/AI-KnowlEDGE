@@ -157,6 +157,6 @@ def generate_answer(
         Answer:"""
     }]
 
-    response = ollama.chat(model=model_name, messages=messages)
+    response = ollama.chat(model=model_name, messages=messages, stream=True)
 
     return response

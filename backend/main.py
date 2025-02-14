@@ -7,7 +7,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from .helpers.doc_helper import get_result
 from .helpers.language_helper import get_extractive_summary
-from .helpers.ollama_helper import get_nb_tokens, get_available_models, generate_questions
+from .helpers.ollama_helper import get_nb_tokens, get_available_models 
+from .helpers.ollama_helper import generate_questions, generate_answer
 
 
 app = FastAPI()  
@@ -19,6 +20,12 @@ class TextContent(BaseModel):
 
 class SummaryContent(BaseModel):
     content: str
+    model_name: str
+
+
+class QuestionContent(BaseModel):
+    question: str
+    relevant_chunks: list
     model_name: str
 
 
@@ -53,3 +60,9 @@ async def get_models():
 async def get_ollama_questions(summary_content: SummaryContent):
     questions = generate_questions(summary_content.model_name, summary_content.content)
     return {"questions": questions}
+
+
+@app.post("/generate_answer/")
+async def get_ollama_answer(question_content: QuestionContent):
+    answer = generate_answer(question_content.question, question_content.relevant_chunks, question_content.model_name)
+    return {"answer": answer}

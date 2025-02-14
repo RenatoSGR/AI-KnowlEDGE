@@ -2,6 +2,8 @@ import re
 import ollama
 
 from typing import List, Any, Tuple, Optional, Generator, Dict
+from collections.abc import Iterator
+from ollama._types import ChatResponse
 
 
 EMBEDDING_MODEL = "nomic-embed-text:latest"
@@ -128,3 +130,33 @@ def generate_questions(model_name: str, summary: str) -> List[str]:
     except Exception as e:
         print(f"Error generating questions: {e}")
         raise Exception(f"Error generating questions: {e}")
+    
+
+def generate_answer(
+        question: str,
+        relevant_chunks: List[str],
+        model_name: str
+    ) -> Iterator[ChatResponse]:
+    
+    context_parts = []
+    for i, chunk in enumerate(relevant_chunks, 1):
+        context_parts.append(f"[Context {i}]: {chunk}")
+    context = "\n\n".join(context_parts)
+
+    messages = [{
+        'role': 'user',
+        'content': f"""Answer the following question using ONLY the provided context.
+        If the answer cannot be fully determined from the context, acknowledge this
+        and explain what can be determined from the available information.
+
+        Question: {question}
+
+        Relevant context:
+        {context}
+
+        Answer:"""
+    }]
+
+    response = ollama.chat(model=model_name, messages=messages)
+
+    return response

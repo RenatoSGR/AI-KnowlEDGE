@@ -1,11 +1,9 @@
-import ollama
 import requests
 
-from typing import List, Any, Tuple, Optional, Generator, Dict
+from typing import List, Optional, Generator
 from dataclasses import dataclass, field
 
-from ollama import chat
-from .config import EXCLUDED_MODELS, TOKEN_THRESHOLD
+from .config import TOKEN_THRESHOLD
 
 
 @dataclass

@@ -1,8 +1,9 @@
 {
     "version": "0.2.0",
     "configurations": [
+        
         {
-            "name": "Python Debugger: FastAPI",
+            "name": "FastAPI",
             "type": "debugpy",
             "request": "launch",
             "module": "uvicorn",
@@ -11,7 +12,27 @@
                 "--port", 
                 "8000"
             ],
-            "jinja": true
+            "jinja": true,
+            "justMyCode": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": "Streamlit",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "frontend/app.py"
+            ],
+            "justMyCode": false,
+            "console": "internalConsole"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "FastAPI + Streamlit",
+            "configurations": ["FastAPI", "Streamlit"]
         }
     ]
 }

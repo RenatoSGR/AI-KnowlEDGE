@@ -109,7 +109,7 @@ To get a local copy up and running follow these simple example steps.
 ### Installation
 
 1. Clone the repository:
-    ```sh
+    ```git
     git clone https://github.com/Azure-Samples/EdgeAIDoc.git
     cd EdgeAIDoc
     ```
@@ -134,13 +134,51 @@ To get a local copy up and running follow these simple example steps.
     ```sh
     cd backend
     python -m venv venv
-    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    venv\Scripts\activate  # On Linux use `source venv/bin/activate`
     pip install -r requirements.txt
     ```
 
-4. Create docker-compose.yml:
-    ```bash
-    docker-compose up
+4. Create docker-compose.yml and put the following code:
+    ```YAML
+
+    version: "3.9"  
+    services:  
+      azure-form-recognizer-read:  
+        container_name: azure-form-recognizer-read  
+        image: mcr.microsoft.com/azure-cognitive-services/form-recognizer/read-3.1  
+        environment:  
+          - EULA=accept  
+          - billing=<document-intelligence-endpoint>
+          - apiKey=<document-intelligence-key>
+        ports:  
+          - "5000:5000"  
+        networks:  
+          - ocrvnet
+
+      textanalytics:
+        image: mcr.microsoft.com/azure-cognitive-services/textanalytics/summarization:cpu
+        environment:
+          - eula=accept
+          - rai_terms=accept
+          - billing=<language-endoint>
+          - apikey=<language-key> 
+        volumes:
+          - "C:\\ExtractiveModel:/models" 
+        ports:
+          - "5001:5000"
+      
+    networks:  
+      ocrvnet:  
+        driver: bridge  
+    ```
+
+5. Now you can create the container. Simply run the following command.
+
+    ```sh
+    cd backend
+    python -m venv venv
+    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    pip install -r requirements.txt
     ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

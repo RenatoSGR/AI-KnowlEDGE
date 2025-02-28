@@ -97,20 +97,20 @@ Containers enable you to run Azure AI services APIs in your own environment, and
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
 To get a local copy up and running follow these simple example steps.
 
 ### Prerequisites
 
 - Node.js
-- Python 3.8+
+- Python 3.12+
 - Docker
+- VS Code
 
 ### Installation
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/ajakupov_microsoft/EdgeAIDoc
+    git clone https://github.com/Azure-Samples/EdgeAIDoc.git
     cd EdgeAIDoc
     ```
 

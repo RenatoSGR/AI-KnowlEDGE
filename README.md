@@ -105,6 +105,7 @@ To get a local copy up and running follow these simple example steps.
 - Python 3.12+
 - Docker
 - VS Code
+- Ollama
 
 ### Installation
 
@@ -181,6 +182,22 @@ To get a local copy up and running follow these simple example steps.
     pip install -r requirements.txt
     ```
 
+6. Now create the .env file and add the following variables
+
+    ```
+    AZURE_DOCUMENT_ANALYSIS_ENDPOINT=http://localhost:5000
+    AZURE_DOCUMENT_ANALYSIS_KEY=<document-intelligence-key>
+    LANGUAGE_ENDPOINT=http://localhost:5001
+    LANGUAGE_KEY=<language-key> 
+    ```
+7. Download ollama and install at leas one slm and one embedding model. For instance
+
+    ```
+    ollama run phi3
+    ollama pull nomic-embed-text
+    ```
+8. Start the application. In VScode, F5 or Run > Start Debugging
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -188,7 +205,7 @@ To get a local copy up and running follow these simple example steps.
 <!-- USAGE EXAMPLES -->
 ## Debugging
 
-1. Start the FastAPI backend:
+1. Start the FastAPI backend separately:
     ```sh
     cd backend
     uvicorn main:app --port 8000 

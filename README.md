@@ -232,7 +232,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more info.
 
 Raoui Lassoued [@rlassoued](https://twitter.com/ajakupov1) [LinkedIn](https://www.linkedin.com/in/raoui-lassoued-07332165/)
 
-Project Link: [DocEdge](https://github.com/ajakupov_microsoft/EdgeAIDoc)
+Project Link: [DocEdge](https://learn.microsoft.com/en-us/azure/ai-services/containers/disconnected-container-faq)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

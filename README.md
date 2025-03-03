@@ -18,14 +18,14 @@
   <p align="center">
     AIknowlEDGE is a desktop application built with Electron.js and Python FastAPI to showcase Disconnected Containers.  
     <br />
-    <a href="https://github.com/ajakupov_microsoft/EdgeAIDoc"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/AzureSamples/AIknowlEDGE"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/ajakupov_microsoft/EdgeAIDoc">View Demo</a>
+    <a href="https://github.com/AzureSamples/AIknowlEDGE">View Demo</a>
     ·
-    <a href="https://github.com/ajakupov_microsoft/EdgeAIDoc/issues">Report Bug</a>
+    <a href="https://github.com/AzureSamples/AIknowlEDGE/issues">Report Bug</a>
     ·
-    <a href="https://github.com/ajakupov_microsoft/EdgeAIDoc/issues">Request Feature</a>
+    <a href="https://github.com/AzureSamples/AIknowlEDGE/issues">Request Feature</a>
   </p>
 </div>
 
@@ -230,7 +230,10 @@ Distributed under the MIT License. See `LICENSE.txt` for more info.
 <!-- CONTACT -->
 ## Contact
 
-Raoui Lassoued [@rlassoued](https://twitter.com/ajakupov1) [LinkedIn](https://www.linkedin.com/in/raoui-lassoued-07332165/)
+Raoui Lassoued [LinkedIn](https://www.linkedin.com/in/raoui-lassoued-07332165/)
+Serge Retkowsky [LinkedIn](https://www.linkedin.com/in/serger/)
+Farid El Attaoui [LinkedIn](https://www.linkedin.com/in/farid-el-attaoui/)
+Alibek Jakupov [@ajakupov1](https://twitter.com/ajakupov1) [LinkedIn](https://www.linkedin.com/in/alibek-jakupov-30305b61/)
 
 Project Link: [DocEdge](https://learn.microsoft.com/en-us/azure/ai-services/containers/disconnected-container-faq)
 
@@ -239,7 +242,7 @@ Project Link: [DocEdge](https://learn.microsoft.com/en-us/azure/ai-services/cont
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-* [The Rookie Developer Blog](https://www.alirookie.com/)
+* Microsoft France
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

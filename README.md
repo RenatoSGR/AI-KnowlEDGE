@@ -10,9 +10,7 @@
 
 <br />
 <div align="center">
-  <a href="https://github.com/ajakupov_microsoft/EdgeAIDoc">
-    <img src="images/logo_black.png" alt="Logo" width="600">
-  </a>
+  <img src="images/logo_black.png" alt="Logo" width="600">
 
   <h3 align="center">AIknowlEDGE</h3>
   <p align="center">
@@ -87,8 +85,8 @@ Follow these steps to run the project locally.
 
 1. Clone the repository:
     ```git
-    git clone https://github.com/Azure-Samples/EdgeAIDoc.git
-    cd EdgeAIDoc
+    git clone https://github.com/Azure-Samples/AIknowlEDGE.git
+    cd AIknowlEDGE
     ```
 
 2. Install Docker and pull the container:
@@ -203,7 +201,7 @@ Follow these steps to run the project locally.
   - [ ] Single-click installation
   - [ ] Cross-platform installation
 
-See the [open issues](https://github.com/Azure-Samples/EdgeAIDoc/issues) for proposed features and known issues.
+See the [open issues](https://github.com/Azure-Samples/AIknowlEDGE/issues) for proposed features and known issues.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

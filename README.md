@@ -11,7 +11,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/ajakupov_microsoft/EdgeAIDoc">
-    <img src="images/logo_black.png" alt="Logo">
+    <img src="images/logo_black.png" alt="Logo" width="600">
   </a>
 
   <h3 align="center">AIknowlEDGE</h3>

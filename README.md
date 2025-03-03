@@ -11,7 +11,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/ajakupov_microsoft/EdgeAIDoc">
-    <img src="https://camo.githubusercontent.com/76e3e75e12f232eb6e23f28c4f6a177a11a3097a36292227d308cb17378fe33c/68747470733a2f2f6172617361746173617967696e2e6769746875622e696f2f6f70656e6c6f676f732f6c6f676f732f73746570732e6a7067" alt="Logo" width="80" height="80">
+    <img src="images/logo_black.png" alt="Logo">
   </a>
 
   <h3 align="center">AIknowlEDGE</h3>

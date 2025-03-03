@@ -16,14 +16,14 @@
   <p align="center">
     AIknowlEDGE is a desktop application built with Electron.js and Python FastAPI to showcase Disconnected Containers.  
     <br />
-    <a href="https://github.com/AzureSamples/AIknowlEDGE"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/Azure-Samples/AI-knowlEDGE"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/AzureSamples/AIknowlEDGE">View Demo</a>
+    <a href="https://github.com/Azure-Samples/AI-knowlEDGE">View Demo</a>
     ·
-    <a href="https://github.com/AzureSamples/AIknowlEDGE/issues">Report Bug</a>
+    <a href="https://github.com/Azure-Samples/AI-knowlEDGE/issues">Report Bug</a>
     ·
-    <a href="https://github.com/AzureSamples/AIknowlEDGE/issues">Request Feature</a>
+    <a href="https://github.com/Azure-Samples/AI-knowlEDGE/issues">Request Feature</a>
   </p>
 </div>
 
@@ -84,7 +84,7 @@ Follow these steps to run the project locally.
 
 1. Clone the repository:
     ```git
-    git clone https://github.com/Azure-Samples/AIknowlEDGE.git
+    git clone https://github.com/Azure-Samples/AI-knowlEDGE.git
     cd AIknowlEDGE
     ```
 

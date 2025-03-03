@@ -64,7 +64,7 @@ Containers let you run Azure AI services in your own environment, meeting securi
 ### Built With
 * [![Python][Python-logo]][Python-url]
 * [![Fastapi][Fastapi-logo]][Fastapi-url]
-* [![Nodejs][Nodejs-logo]][Nodejs-url]
+* [![Docker][Docker-logo]][Docker-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -75,7 +75,6 @@ Follow these steps to run the project locally.
 
 ### Prerequisites
 
-- Node.js  
 - Python 3.12+  
 - Docker  
 - VS Code  
@@ -228,12 +227,12 @@ Distributed under the MIT License. See `LICENSE.txt` for more info.
 <!-- CONTACT -->
 ## Contact
 
-Raoui Lassoued [LinkedIn](https://www.linkedin.com/in/raoui-lassoued-07332165/)
-Serge Retkowsky [LinkedIn](https://www.linkedin.com/in/serger/)
-Farid El Attaoui [LinkedIn](https://www.linkedin.com/in/farid-el-attaoui/)
-Alibek Jakupov [@ajakupov1](https://twitter.com/ajakupov1) [LinkedIn](https://www.linkedin.com/in/alibek-jakupov-30305b61/)
+* Raoui Lassoued [LinkedIn](https://www.linkedin.com/in/raoui-lassoued-07332165/)
+* Serge Retkowsky [LinkedIn](https://www.linkedin.com/in/serger/)
+* Farid El Attaoui [LinkedIn](https://www.linkedin.com/in/farid-el-attaoui/)
+* Alibek Jakupov [@ajakupov1](https://twitter.com/ajakupov1) [LinkedIn](https://www.linkedin.com/in/alibek-jakupov-30305b61/)
 
-Project Link: [DocEdge](https://learn.microsoft.com/en-us/azure/ai-services/containers/disconnected-container-faq)
+Project Link: [AIKnowlEDGE](https://learn.microsoft.com/en-us/azure/ai-services/containers/disconnected-container-faq)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -266,3 +265,5 @@ Project Link: [DocEdge](https://learn.microsoft.com/en-us/azure/ai-services/cont
 [Fastapi-url]: https://fastapi.tiangolo.com
 [Nodejs-logo]: https://img.shields.io/badge/node.js-339933?style=for-the-badge&logo=Node.js&logoColor=white
 [Nodejs-url]: https://nodejs.org/en
+[Docker-logo]: https://img.shields.io/badge/Docker-339933?style=for-the-badge&logo=Docker&logoColor=white
+[Docker-url]: https://www.docker.com

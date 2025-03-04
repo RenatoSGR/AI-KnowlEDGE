@@ -88,12 +88,12 @@ Follow these steps to run the project locally.
     cd AI-knowlEDGE
     ```
 
-2. Install Docker and pull the container:
+2. Install Docker and start. Then open the cmd and pull the container by running the following command:
     ```sh
     docker pull mcr.microsoft.com/azure-cognitive-services/textanalytics/summarization:cpu
     ```
 
-3. Get your Cognitive Services keys and endpoints:
+3. Get your Cognitive Services keys and endpoints for the two products (available on Azure) - Azure Document Intelligence and Azure AI Language:
     ```
     AZURE_DOCUMENT_ANALYSIS_ENDPOINT
     AZURE_DOCUMENT_ANALYSIS_KEY

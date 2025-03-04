@@ -57,7 +57,7 @@
 
 [![Product Name Screen Shot][product-screenshot]](https://example.com)
 
-Azure AI containers gives you the flexibility to run some Document Intelligence services locally in containers. Connected containers run locally in your environment and send usage information to the cloud for billing. Disconnected containers are intended for scenarios where no connectivity with the cloud is needed for the containers to run.
+Azure AI containers gives you the flexibility to run Azure AI services locally in containers. Connected containers run locally in your environment and send usage information to the cloud for billing. Disconnected containers are intended for scenarios where no connectivity with the cloud is needed for the containers to run.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

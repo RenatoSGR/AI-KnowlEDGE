@@ -85,7 +85,7 @@ Follow these steps to run the project locally.
 1. Clone the repository:
     ```git
     git clone https://github.com/Azure-Samples/AI-knowlEDGE.git
-    cd AIknowlEDGE
+    cd AI-KnowlEDGE
     ```
 
 2. Install Docker and pull the container:

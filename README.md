@@ -113,12 +113,17 @@ Follow these steps to run the project locally.
     docker pull mcr.microsoft.com/azure-cognitive-services/textanalytics/summarization:cpu
     ```
 
-3. Get your Cognitive Services keys and endpoints for the two products (available on Azure) - Azure Document Intelligence and Azure AI Language:
+3. Get the Azure Cognitive Services keys and endpoints for Azure Document Intelligence and Azure AI Language. Before using Cognitive Services containers in disconnected environments, you must complete a request form and purchase a commitment plan. Next, provision a new resource in the portal. Select the **DC0** option for the Pricing tier to enable disconnected containers, (for Document Intelligence additionally choose a custom, read, or prebuilt commitment tier). 
+
+*Note: For a “semi-disconnected” mode, you can provision a Document Intelligence and Language Resource with the S0 commitment plan, without filling any request form*.
+
+For your convienice, create a txt document and save the keys and endpoint in the following format:
+
     ```
-    AZURE_DOCUMENT_ANALYSIS_ENDPOINT
-    AZURE_DOCUMENT_ANALYSIS_KEY
-    LANGUAGE_ENDPOINT
-    LANGUAGE_KEY
+    AZURE_DOCUMENT_ANALYSIS_ENDPOINT = <document-intelligence-endpoint>
+    AZURE_DOCUMENT_ANALYSIS_KEY = <document-intelligence-key>
+    LANGUAGE_ENDPOINT = <ai-language-endpoint>
+    LANGUAGE_KEY = <ai-language-key>
     ```
 
 4. Create a folder on your C:/ drive named `ExtractiveModel`.
@@ -128,15 +133,14 @@ Follow these steps to run the project locally.
     docker run -v C:\ExtractiveModel:/models mcr.microsoft.com/azure-cognitive-services/textanalytics/summarization:cpu downloadModels=ExtractiveSummarization billing=LANGUAGE_ENDPOINT apikey=LANGUAGE_KEY
     ```
 
-6. Set up the Python environment and install dependencies:
+6. Now open the cloned repo in a command line or VSCode, and set up the Python environment and install project dependencies:
     ```sh
-    cd backend
     python -m venv venv
     venv\Scripts\activate  # On Linux use `source venv/bin/activate`
     pip install -r requirements.txt
     ```
 
-7. Create a docker-compose.yml with the following code:
+7. Create a docker-compose.yml (in the root folder) with the following code:
     ```YAML
     version: "3.9"
     services:
@@ -185,16 +189,19 @@ Follow these steps to run the project locally.
 10. Download Ollama and install at least one SLM and one embedding model:
     ```sh
     ollama pull phi3
+    ```
+    We also use an embedding model to vectorize document chunks and build a local RAG solution with **ChromaDB**. Thus, additionally, ensure that the required embedding model is installed.
+    ```sh
     ollama pull nomic-embed-text
     ```
 
-11. Start the FastAPI backend:
+11. Start the FastAPI backend (from the root folder):
     ```sh
     uvicorn backend.main:app --host 0.0.0.0 --port 8000
     ```
     If you're using VS Code, simply press F5 or go to **Run** > **Start Debugging**. The `launch.json` is already configured.
 
-12. Start the Streamlit frontend:
+12. Open another terminal and start the Streamlit frontend:
     ```sh
     streamlit run frontend/app.py --server.port=8501
     ```
@@ -202,19 +209,15 @@ Follow these steps to run the project locally.
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
-## Debugging
+## Debugging and troubleshooting
 
-1. Start the FastAPI backend:
-    ```sh
-    cd backend
-    uvicorn main:app --port 8000
-    ```
+* If you see the following error```
+requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /get_models/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x124209be0>: Failed to establish a new connection: [Errno 61] Connection refused'))``` make sure the FastAPI backend is running. Check the outputs if needed.
 
-2. Start the Streamlit app:
-    ```sh
-    cd frontend
-    
-    ```
+* If you're able to start the streamlit app and see the following error message: ```No Ollama models found. Please ensure Ollama is running and models are installed.``` this means you didn't start the ollama application.
+
+* You can also run unit tests from the **tests** folder, for debugging the FastAPI backend.
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

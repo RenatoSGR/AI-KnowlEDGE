@@ -57,7 +57,26 @@
 
 [![Product Name Screen Shot][product-screenshot]](https://example.com)
 
-Azure AI containers gives you the flexibility to run Azure AI services locally in containers. Connected containers run locally in your environment and send usage information to the cloud for billing. Disconnected containers are intended for scenarios where no connectivity with the cloud is needed for the containers to run.
+Welcome to the AI-KnowlEDGE project! The goal of this repository is to provide an accelerator that enables users to quickly and efficiently set up and run Azure AI services on a disconnected environment. By following our comprehensive set of instructions and utilizing the provided sample project, users can seamlessly deploy and manage their disconnected services with ease. Our aim is to simplify the setup process, reduce deployment time, and ensure a smooth operational experience for all users.
+
+Azure AI services offer a variety of Docker containers that allow you to utilize the same APIs available in Azure, but on your own premises. By using these containers, you gain the flexibility to position Azure AI services closer to your data, which can be beneficial for compliance, security, or other operational needs. Currently, container support is offered for a limited number of Azure AI services.
+
+Containerization is a method of software distribution where an application or service, along with its dependencies and configuration, is bundled together into a container image. This container image can be deployed on a container host with minimal or no alterations. Containers are isolated from one another and from the underlying operating system, and they have a smaller footprint compared to virtual machines. They can be created from container images for temporary tasks and removed when they are no longer needed.
+
+
+### Features and Benefits
+
+* **Immutable Infrastructure**: DevOps teams can utilize a consistent and reliable set of known system parameters while remaining adaptable to changes. Containers offer the flexibility to pivot within a stable ecosystem and prevent configuration drift.
+
+* **Control Over Data**: You can determine where your data is processed by Azure AI services, which is crucial if you cannot send data to the cloud but still need access to Azure AI services APIs. This approach supports consistency in hybrid environments across data, management, identity, and security.
+
+* **Control Over Model Updates**: You have the flexibility to version and update models deployed in your solutions as needed.
+
+* **Portable Architecture**: Containers enable the creation of a portable application architecture that can be deployed on Azure, on-premises, and at the edge. They can be deployed directly to Azure Kubernetes Service, Azure Container Instances, or a Kubernetes cluster on Azure Stack. For more details, see Deploy Kubernetes to Azure Stack.
+
+* **High Throughput / Low Latency**: Containers allow Azure AI services to run close to your application logic and data, meeting high throughput and low latency requirements. They do not limit transactions per second (TPS) and can scale both vertically and horizontally to meet demand, given sufficient hardware resources.
+
+* **Scalability**: With the growing popularity of containerization and container orchestration software like Kubernetes, scalability is a key focus. Building on a scalable cluster foundation allows for application development that supports high availability.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -65,6 +84,7 @@ Azure AI containers gives you the flexibility to run Azure AI services locally i
 * [![Python][Python-logo]][Python-url]
 * [![Fastapi][Fastapi-logo]][Fastapi-url]
 * [![Docker][Docker-logo]][Docker-url]
+* [![Streamlit][Streamlit-logo]][Streamlit-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -116,7 +136,7 @@ Follow these steps to run the project locally.
     pip install -r requirements.txt
     ```
 
-7. Create a docker-compose.yml with the following:
+7. Create a docker-compose.yml with the following code:
     ```YAML
     version: "3.9"
     services:
@@ -168,7 +188,16 @@ Follow these steps to run the project locally.
     ollama pull nomic-embed-text
     ```
 
-11. Start the application from VS Code: F5 or Run > Start Debugging
+11. Start the FastAPI backend:
+    ```sh
+    uvicorn backend.main:app --host 0.0.0.0 --port 8000
+    ```
+    If you're using VS Code, simply press F5 or go to **Run** > **Start Debugging**. The `launch.json` is already configured.
+
+12. Start the Streamlit frontend:
+    ```sh
+    streamlit run frontend/app.py --server.port=8501
+    ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -184,7 +213,7 @@ Follow these steps to run the project locally.
 2. Start the Streamlit app:
     ```sh
     cd frontend
-    streamlit run app.py --server.port=8501
+    
     ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -257,7 +286,7 @@ Project Link: [AIKnowlEDGE](https://learn.microsoft.com/en-us/azure/ai-services/
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://www.linkedin.com/company/microsoft/
 [product-screenshot]: https://learn.microsoft.com/en-us/azure/ai-services/containers/media/container-security.svg
-[Python-logo]: https://img.shields.io/badge/python-0769AD?style=for-the-badge&logo=python&logoColor=white
+[Python-logo]: https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54
 [Python-url]: https://www.python.org
 [Django-logo]: https://img.shields.io/badge/django-35495E?style=for-the-badge&logo=django&logoColor=4FC08D
 [Django-url]: https://www.djangoproject.com
@@ -265,5 +294,8 @@ Project Link: [AIKnowlEDGE](https://learn.microsoft.com/en-us/azure/ai-services/
 [Fastapi-url]: https://fastapi.tiangolo.com
 [Nodejs-logo]: https://img.shields.io/badge/node.js-339933?style=for-the-badge&logo=Node.js&logoColor=white
 [Nodejs-url]: https://nodejs.org/en
-[Docker-logo]: https://img.shields.io/badge/Docker-339933?style=for-the-badge&logo=Docker&logoColor=white
+[Docker-logo]: https://img.shields.io/badge/docker-257bd6?style=for-the-badge&logo=docker&logoColor=white
 [Docker-url]: https://www.docker.com
+[Streamlit-logo]: https://img.shields.io/badge/-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white
+[Streamlit-url]: https://streamlit.io
+

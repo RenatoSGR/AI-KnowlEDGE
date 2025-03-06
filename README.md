@@ -16,10 +16,10 @@
   <p align="center">
     AIknowlEDGE is a desktop application built with Electron.js and Python FastAPI to showcase Disconnected Containers.  
     <br />
-    <a href="https://github.com/Azure-Samples/AI-knowlEDGE"><strong>Explore the docs »</strong></a>
+    <a href="https://www.youtube.com/watch?v=m9Q2RUp-3Vo"><strong>View Demo</strong></a>
     <br />
     <br />
-    <a href="https://github.com/Azure-Samples/AI-knowlEDGE">View Demo</a>
+    <a href="https://learn.microsoft.com/en-us/azure/ai-services/containers/disconnected-container-faq">Explore the docs</a>
     ·
     <a href="https://github.com/Azure-Samples/AI-knowlEDGE/issues">Report Bug</a>
     ·

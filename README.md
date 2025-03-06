@@ -14,7 +14,8 @@
 
   <h3 align="center">AIknowlEDGE</h3>
   <p align="center">
-    AIknowlEDGE is a desktop application built with Electron.js and Python FastAPI to showcase Disconnected Containers.  
+    AIknowlEDGE is a desktop application that enables users to seamlessly deploy and manage their disconnected Azure AI services with ease. 
+    <br />
     <br />
     <a href="https://www.youtube.com/watch?v=m9Q2RUp-3Vo">
       <img src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg" alt="YouTube logo" width="20" style="vertical-align: middle;" />

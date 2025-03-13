@@ -85,6 +85,7 @@ Containerization is a method of software distribution where an application or se
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Built With
+* [![Azure][Azure-logo]][Azure-url]
 * [![Python][Python-logo]][Python-url]
 * [![Fastapi][Fastapi-logo]][Fastapi-url]
 * [![Docker][Docker-logo]][Docker-url]
@@ -308,5 +309,6 @@ Project Link: [AIKnowlEDGE](https://learn.microsoft.com/en-us/azure/ai-services/
 [Streamlit-url]: https://streamlit.io
 [Ollama-logo]: https://img.shields.io/badge/-Ollama-000000?style=for-the-badge&logo=ollama&logoColor=white
 [Ollama-url]: https://ollama.com
-
+[Azure-logo]: https://img.shields.io/badge/azure-0089D6?style=for-the-badge&logo=azure&logoColor=white
+[Azure-url]: https://azure.microsoft.com/en-us/
 

@@ -278,6 +278,7 @@ Project Link: [AIKnowlEDGE](https://learn.microsoft.com/en-us/azure/ai-services/
 ## Acknowledgments
 
 * Microsoft France
+* [The Rookie Developer Blog](https://www.alirookie.com/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

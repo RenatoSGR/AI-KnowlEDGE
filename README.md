@@ -118,7 +118,11 @@ Follow these steps to run the project locally.
     ```sh
     docker pull mcr.microsoft.com/azure-cognitive-services/textanalytics/summarization:cpu
     ```
+Note : For MacOS user, you need to change to 
+ ```sh
+    docker pull mcr.microsoft.com/azure-cognitive-services/textanalytics/summarization:cpu --platform linux/x86_64
 
+    ```
 3. Get the Azure Cognitive Services keys and endpoints for Azure Document Intelligence and Azure AI Language. Before using Cognitive Services containers in disconnected environments, you must complete a request form and purchase a commitment plan. Next, provision a new resource in the portal. Select the **DC0** option for the Pricing tier to enable disconnected containers, (for Document Intelligence additionally choose a custom, read, or prebuilt commitment tier). 
 
 *Note: For a “semi-disconnected” mode, you can provision a Document Intelligence and Language Resource with the S0 commitment plan, without filling any request form*.
@@ -312,4 +316,5 @@ Project Link: [AIKnowlEDGE](https://learn.microsoft.com/en-us/azure/ai-services/
 [Ollama-url]: https://ollama.com
 [Azure-logo]: https://img.shields.io/badge/azure-0089D6?style=for-the-badge&logo=azure&logoColor=white
 [Azure-url]: https://azure.microsoft.com/en-us/
+
 

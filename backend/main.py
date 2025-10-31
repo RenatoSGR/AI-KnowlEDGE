@@ -56,6 +56,14 @@ async def get_models():
     return {"available_models": get_available_models()}
 
 
+@app.get("/get_best_model/")
+async def get_best_model():
+    """Get the best available model for text generation with memory optimization"""
+    from helpers.ollama_helper import get_best_available_model
+    best_model = get_best_available_model()
+    return {"best_model": best_model}
+
+
 @app.post("/generate_questions/")
 async def get_ollama_questions(summary_content: SummaryContent):
     questions = generate_questions(summary_content.model_name, summary_content.content)

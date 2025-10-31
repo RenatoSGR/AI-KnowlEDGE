@@ -3,7 +3,49 @@ import chromadb
 from chromadb.config import Settings
 import ollama
 import uuid
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+# Try to import the text splitter with fallback
+try:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+except ImportError:
+    # Fallback: Create a simple text splitter
+    class RecursiveCharacterTextSplitter:
+        def __init__(self, chunk_size=1000, chunk_overlap=200, separators=None):
+            self.chunk_size = chunk_size
+            self.chunk_overlap = chunk_overlap
+            self.separators = separators or ["\n\n", "\n", ".", "!", "?", ",", " ", ""]
+        
+        def split_text(self, text: str) -> List[str]:
+            """Simple text splitter implementation as fallback"""
+            if not text:
+                return []
+            
+            chunks = []
+            for separator in self.separators:
+                if separator in text:
+                    parts = text.split(separator)
+                    current_chunk = ""
+                    
+                    for part in parts:
+                        if len(current_chunk) + len(part) + len(separator) <= self.chunk_size:
+                            if current_chunk:
+                                current_chunk += separator + part
+                            else:
+                                current_chunk = part
+                        else:
+                            if current_chunk:
+                                chunks.append(current_chunk)
+                            current_chunk = part
+                    
+                    if current_chunk:
+                        chunks.append(current_chunk)
+                    break
+            else:
+                # If no separators found, just split by chunk size
+                for i in range(0, len(text), self.chunk_size):
+                    chunks.append(text[i:i + self.chunk_size])
+            
+            return chunks
 from .config import (
     CHUNK_SIZE,
     CHUNK_OVERLAP,
